@@ -1,4 +1,4 @@
-# Martin Klamrowski
+
 # cuboid.py
 # Adapted from CoppeliaSim tutorial (simpleTest.py).
 
@@ -11,7 +11,7 @@ ap = argparse.ArgumentParser()
 ap.add_argument("-p", "--port", required=True, help="Add a port man.")
 args = vars(ap.parse_args())
 
-NOM_LIN_VEL = 40
+NOM_LIN_VEL = 2
 
 if __name__ == "__main__":    
     sim.simxFinish(-1) # just in case, close all opened connections
@@ -25,6 +25,7 @@ if __name__ == "__main__":
         # retrieve data in a blocking fashion (i.e. a service call):
         # res, objs = sim.simxGetObjects(clientID, sim.sim_handle_all, sim.simx_opmode_blocking)
         
+        # there are no vision sensors i.e. this will fail
         vision_sensors = (sim.simxGetObjectHandle(clientID, "Vision_sensor1", 
                                                   sim.simx_opmode_blocking)[1],
                           sim.simxGetObjectHandle(clientID, "Vision_sensor0", 
@@ -53,7 +54,7 @@ if __name__ == "__main__":
                     
                 sim.simxSetJointTargetVelocity(clientID,
                                                right_joint, 
-                                               2 if (data0[0][10] < 0.3) else NOM_LIN_VEL,
+                                               0.1 if (data0[0][10] < 0.3) else NOM_LIN_VEL,
                                                sim.simx_opmode_oneshot)
             
             if ret_code2 != -1 and det_state2 != -1:
@@ -61,7 +62,7 @@ if __name__ == "__main__":
                 print("{} {}".format(data2[0][10], data2[0][10] < 0.3))
                 sim.simxSetJointTargetVelocity(clientID,
                                                left_joint, 
-                                               2 if (data2[0][10] < 0.3) else NOM_LIN_VEL,
+                                               0.1 if (data2[0][10] < 0.3) else NOM_LIN_VEL,
                                                sim.simx_opmode_oneshot)
         
         
