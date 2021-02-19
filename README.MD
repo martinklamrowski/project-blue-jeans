@@ -5,15 +5,19 @@
 
 【Required】
  - CoppeliaSim to open the scene.
+    - Robot.ttt (use this with main)
+    - scenes/maze.ttt
  - Steps from the Lab Report that I'm too lazy to get right now. [TODO]
+
+- OR Add robot_model.ttm to scene by File -> Import Model
 
 【Usage】
 ```bash
 $ python -p <port> cuboid.py
-$ python main -p <port>
+$ python main.py -p <port>
 ```
-
 current Coppelia Port = 8008
+
 
 【Contributors】
 Angela, Tarun, Martin, Matt
