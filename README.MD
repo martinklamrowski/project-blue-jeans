@@ -10,7 +10,10 @@
 【Usage】
 ```bash
 $ python -p <port> cuboid.py
+$ python main -p <port>
 ```
+
+current Coppelia Port = 8008
 
 【Contributors】
 Angela, Tarun, Martin, Matt
