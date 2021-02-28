@@ -7,7 +7,6 @@
  - CoppeliaSim to open the scene.
     - Robot.ttt (use this with main)
     - scenes/maze.ttt
-	- SCENES IN SCENES PEASE
  - Steps from the Lab Report that I'm too lazy to get right now. [TODO]
 
 - OR Add robot_model.ttm to scene by File -> Import Model
