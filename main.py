@@ -1,5 +1,9 @@
-from utils.boundary import Boundary
 import argparse
+import time
+
+from utils.boundary import Boundary
+from utils.maze_map import MazeMap
+from pyrobo.robo import Robo
 
 ap = argparse.ArgumentParser()
 
@@ -8,14 +12,31 @@ args = vars(ap.parse_args())
 
 
 def main():
-    b = Boundary(int(args["port"]))
+    # this is a test; the robo doesn't know about this maze, it will have a different one internally
+    fake_maze = MazeMap(10, 10, False)
+    print(fake_maze)
 
-    b.send_msg("heyo!")
+    # TODO: I think the Boundary instance should eventually be moved to Robo, could also
+    #       just pass b to Robo() - that's what i'll do for now.
+    # b = Boundary(int(args["port"]))
 
-    print(b.get_proxy())
+    # b.send_msg("heyo!")
+
+    # print(b.get_proxy())
+
+    robo = Robo(boundary=None, testing=True)
+    robo.print_map()
+
+    # main routine
+    while True:
+        robo.move_to_next(fake_maze)
+        robo.print_map()
+        print("Robo's Current Position: {}j, {}i".format(robo.pos_j, robo.pos_i))
+        time.sleep(1)
+
 
     # b.print(get_vision())
-    b.close_sim_connection()
+    #b.close_sim_connection()
 
     #
     #     time.sleep(2)
