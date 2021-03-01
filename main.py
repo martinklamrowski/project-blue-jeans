@@ -1,5 +1,8 @@
-from utils.boundary import Boundary
 import argparse
+
+from utils.boundary import Boundary
+from utils.maze_map import MazeMap
+from pyrobo.robo import Robo
 
 ap = argparse.ArgumentParser()
 
@@ -8,6 +11,13 @@ args = vars(ap.parse_args())
 
 
 def main():
+    # the robo doesn't know about this maze; it will have a different one internally
+    fake_maze = MazeMap(10, 10, False)
+    print(fake_maze)
+
+    robo = Robo()
+    robo.print_map()
+
     b = Boundary(int(args["port"]))
 
     b.send_msg("heyo!")
