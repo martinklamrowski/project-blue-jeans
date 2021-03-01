@@ -1,0 +1,9 @@
+NORTH = 0
+EAST = 1
+SOUTH = 2
+WEST = 3
+
+# some settings
+EXPLORATION_MODE = 11
+HOOK_MODE = 12
+EXIT_MODE = 13

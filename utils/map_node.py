@@ -1,10 +1,13 @@
+import utils.constants as consts
+
+
 class MapNode(object):
 
     # def __new__(cls, *args, **kwargs):
     #     print("MapNode created.")
     #     return super(MapNode, cls).__new__(cls)
 
-    def __init__(self, n: bool, e: bool, s: bool, w: bool, i: int, j: int):
+    def __init__(self, n: bool, e: bool, s: bool, w: bool, j: int, i: int):
         """
         Makes a new MapNode.
 
@@ -15,9 +18,12 @@ class MapNode(object):
         :param i: bool -> x position in map
         :param j: bool -> y position in map
         """
-        self.n = n
-        self.e = e
-        self.s = s
-        self.w = w
-        self.i = i
+
+        self.walls = {
+            consts.NORTH: n,
+            consts.EAST: e,
+            consts.SOUTH: s,
+            consts.WEST: w
+        }
         self.j = j
+        self.i = i
