@@ -1,5 +1,6 @@
 import sim_lib.sim as sim
 import sim_lib.simConst as sC
+import math
 
 
 class Boundary(object):
@@ -17,12 +18,9 @@ class Boundary(object):
 
         # init robot parts
         self.res, self.objs = sim.simxGetObjects(self.__clientID, sC.sim_handle_all, sC.simx_opmode_blocking)
-        self.proxySensors = (
-            sim.simxGetObjectHandle(self.__clientID, "LeftProximitySensor", sC.simx_opmode_blocking)[1],
-            sim.simxGetObjectHandle(self.__clientID, "FrontProximitySensor", sC.simx_opmode_blocking)[
-                1],
-            sim.simxGetObjectHandle(self.__clientID, "RightProximitySensor", sC.simx_opmode_blocking)[
-                1])
+        self.proxySensors = (sim.simxGetObjectHandle(self.__clientID, "LeftProximitySensor", sC.simx_opmode_blocking)[1],
+                             sim.simxGetObjectHandle(self.__clientID, "FrontProximitySensor", sC.simx_opmode_blocking)[1],
+                             sim.simxGetObjectHandle(self.__clientID, "RightProximitySensor", sC.simx_opmode_blocking)[1])
         self.motors = (sim.simxGetObjectHandle(self.__clientID, "LeftJoint", sC.simx_opmode_blocking)[1],
                        sim.simxGetObjectHandle(self.__clientID, "RightJoint", sC.simx_opmode_blocking)[1])
         self.visionSensor = sim.simxGetObjectHandle(self.__clientID, "VisionSensor", sC.simx_opmode_blocking)[1]
@@ -40,15 +38,20 @@ class Boundary(object):
     def send_msg(self, msg):
         sim.simxAddStatusbarMessage(self.__clientID, msg, sC.simx_opmode_oneshot)
 
-    def get_proxy(self):
-        q = [0, 0]
-        q[0], temp, q[1] = sim.simxReadProximitySensor(self.__clientID, self.proxySensors[0], sC.simx_opmode_blocking)[
-                           2:5]
-        return q[1]
+    def get_proxys(self):
+        dists = [0,0,0]
+        dists[0], temp, temp = sim.simxReadProximitySensor(self.__clientID, self.proxySensors[0], sC.simx_opmode_blocking)[2:5]
+        dists[1], temp, temp = sim.simxReadProximitySensor(self.__clientID, self.proxySensors[1], sC.simx_opmode_blocking)[2:5]
+        dists[2], temp, temp = sim.simxReadProximitySensor(self.__clientID, self.proxySensors[2], sC.simx_opmode_blocking)[2:5]
+        del temp
+        for n in range(len(dists)):
+            dists[n] = math.sqrt((dists[n][0]) ** 2 + (dists[n][1]) ** 2 + (dists[n][2]) ** 2)
+            if dists[n] < 0.05: dists[n] = 0
+
+        return dists
 
     def get_vision(self):
-        ret_code, det_state, data = sim.simxReadVisionSensor(self.__clientID, self.visionSensor,
-                                                             sC.simx_opmode_blocking)
+        ret_code, det_state, data = sim.simxReadVisionSensor(self.__clientID, self.visionSensor,sC.simx_opmode_blocking)
         # print(type(data[0]))
         # print(data[0])
         # print(len(data[0]))
@@ -59,3 +62,9 @@ class Boundary(object):
 
     def set_right_motor(self):
         print(self.motors)
+
+
+if __name__ == "__main__":
+    b = Boundary(8008)
+    b.send_msg("heyo!")
+    b.get_proxys()
