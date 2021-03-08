@@ -1,7 +1,7 @@
 import argparse
 import time
 
-from utils.boundary import Boundary
+# from utils.boundary import Boundary
 from utils.maze_map import MazeMap
 from pyrobo.robo import Robo
 
