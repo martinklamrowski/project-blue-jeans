@@ -51,10 +51,19 @@ class Boundary(object):
         return dists
 
     def get_vision(self):
-        ret_code, det_state, data = sim.simxReadVisionSensor(self.__clientID, self.visionSensor,sC.simx_opmode_blocking)
-        # print(type(data[0]))
-        # print(data[0])
-        # print(len(data[0]))
+        # temp, temp, data = sim.simxReadVisionSensor(self.__clientID, self.visionSensor,sC.simx_opmode_blocking)
+        # del temp
+        # print(type(data))
+        # print(data)
+        # print(len(data))
+
+        print(sim.simxGetVisionSensorImage(self.__clientID, self.visionSensor, 0, sC.simx_opmode_blocking))
+
+        # local
+        # newAttr = sim_displayattribute_renderpass
+        # newAttr = newAttr + sim_displayattribute_forvisionsensor
+        # newAttr = newAttr + sim_displayattribute_ignorerenderableflag
+        # simSetObjectInt32Parameter(visionSensorHandle, sim_visionintparam_rendering_attributes, newAttr)
         return 0
 
     def set_left_motor(self):
@@ -67,4 +76,4 @@ class Boundary(object):
 if __name__ == "__main__":
     b = Boundary(8008)
     b.send_msg("heyo!")
-    b.get_proxys()
+    b.get_vision()
