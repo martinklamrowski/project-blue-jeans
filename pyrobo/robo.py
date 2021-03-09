@@ -44,7 +44,6 @@ class Robo(object):
 
         :return: None
         """
-
         if self.testing:
             if testing_map is None:
                 raise TypeError("""
@@ -84,7 +83,6 @@ class Robo(object):
 
         :return: int -> representing a cardinal point from constants.py
         """
-
         if self.orientation == consts.NORTH:
             cardinal_point = consts.WEST
         else:
@@ -99,7 +97,6 @@ class Robo(object):
 
         :return: int -> representing a cardinal point from constants.py
         """
-
         if self.orientation == consts.WEST:
             cardinal_point = consts.NORTH
         else:
@@ -114,7 +111,6 @@ class Robo(object):
 
         :return: int -> representing a cardinal point from constants.py
         """
-
         if self.orientation == consts.NORTH or self.orientation == consts.EAST:
             cardinal_point = self.orientation + 2
         else:
@@ -130,7 +126,6 @@ class Robo(object):
         :param heading: int -> representing a cardinal point from constants.py
         :return: None
         """
-
         if heading == consts.EAST:
             self.pos_i += 1
         elif heading == consts.SOUTH:
@@ -165,3 +160,22 @@ class Robo(object):
             north_node = self.maze_map.get_map_node_at_pos(map_node.j - 1, map_node.i)
             north_node.walls[consts.SOUTH] = True  # TODO: Fugly.
 
+    def raise_arm_step(self, arm):
+        if arm == consts.LEFT_ARM:
+            self.boundary.raise_arm_left_step(consts.ARM_STEP_SIZE_DEG)
+        elif arm == consts.RIGHT_ARM:
+            self.boundary.raise_arm_right_step(consts.ARM_STEP_SIZE_DEG)
+        else:
+            raise ValueError("""
+                Fuck you.
+            """)
+
+    def lower_arm_step(self, arm):
+        if arm == consts.LEFT_ARM:
+            self.boundary.lower_arm_left_step(consts.ARM_STEP_SIZE_DEG)
+        elif arm == consts.RIGHT_ARM:
+            self.boundary.lower_arm_right_step(consts.ARM_STEP_SIZE_DEG)
+        else:
+            raise ValueError("""
+                Fuck you.
+            """)
