@@ -21,6 +21,10 @@ class Boundary(object):
         self.__scene_objects = self.__get_scene_objects_dict()
 
     def close_sim_connection(self):
+        """
+        Function to close the sim connection.
+        :return: None
+        """
         # send some data to CoppeliaSim in a non-blocking fashion:
         sim.simxAddStatusbarMessage(self.__clientID, "PEACE OUT CoppeliaSim", sC.simx_opmode_oneshot)
 
@@ -57,6 +61,11 @@ class Boundary(object):
         print(self.motors)
 
     def raise_arm_left_step(self, step):
+        """
+        Sets the target position of the left joint to its current position plus the step.
+        :param step: int -> Distance to move from current position.
+        :return: None
+        """
         # note: folder0 = right arm TODO : Make intuitive names.
         handle = self.__scene_objects["folder1"]
         step_rad = -step * math.pi / 180
@@ -66,6 +75,11 @@ class Boundary(object):
         sim.simxSetJointTargetPosition(self.__clientID, handle, current_position[1] + step_rad, sC.simx_opmode_oneshot)
 
     def raise_arm_right_step(self, step):
+        """
+        Sets the target position of the right joint to its current position plus the step.
+        :param step: int -> Distance to move from current position.
+        :return: None
+        """
         # note: folder0 = right arm TODO : Make intuitive names.
         handle = self.__scene_objects["folder0"]
         step_rad = -step * math.pi / 180
@@ -75,6 +89,11 @@ class Boundary(object):
         sim.simxSetJointTargetPosition(self.__clientID, handle, current_position[1] + step_rad, sC.simx_opmode_oneshot)
 
     def lower_arm_left_step(self, step):
+        """
+        Sets the target position of the left joint to its current position minus the step.
+        :param step: int -> Distance to move from current position.
+        :return: None
+        """
         # note: folder0 = right arm TODO : Make intuitive names.
         handle = self.__scene_objects["folder1"]
         step_rad = -step * math.pi / 180
@@ -84,6 +103,11 @@ class Boundary(object):
         sim.simxSetJointTargetPosition(self.__clientID, handle, current_position[1] - step_rad, sC.simx_opmode_oneshot)
 
     def lower_arm_right_step(self, step):
+        """
+        Sets the target position of the right joint to its current position minus the step.
+        :param step: int -> Distance to move from current position.
+        :return: None
+        """
         # note: folder0 = right arm TODO : Make intuitive names.
         handle = self.__scene_objects["folder0"]
         step_rad = -step * math.pi / 180
@@ -93,12 +117,20 @@ class Boundary(object):
         sim.simxSetJointTargetPosition(self.__clientID, handle, current_position[1] - step_rad, sC.simx_opmode_oneshot)
 
     def reset_arm_right_pos(self):
+        """
+        Sets the target position of the left joint to 0.
+        :return: None
+        """
         # note: folder0 = right arm TODO : Make intuitive names.
         handle = self.__scene_objects["folder0"]
 
         sim.simxSetJointTargetPosition(self.__clientID, handle, 0, sC.simx_opmode_oneshot)
 
     def reset_arm_left_pos(self):
+        """
+        Sets the target position of the left joint to 0.
+        :return: None
+        """
         # note: folder0 = right arm TODO : Make intuitive names.
         handle = self.__scene_objects["folder1"]
 
@@ -112,7 +144,7 @@ class Boundary(object):
         Gets scene objects and maps the handle to the name.
         TODO : Is there a way to make this one call? If there is
                I can't find it.
-        :return:
+        :return: dict -> Object names mapped to integer handles.
         """
         objects_dict = {
             "LeftProximitySensor": sim.simxGetObjectHandle(self.__clientID, "LeftProximitySensor",
