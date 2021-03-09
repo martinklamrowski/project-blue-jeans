@@ -1,6 +1,7 @@
 import sim_lib.sim as sim
 import sim_lib.simConst as sC
 import math
+import numpy as np
 
 
 class Boundary(object):
@@ -25,19 +26,30 @@ class Boundary(object):
                        sim.simxGetObjectHandle(self.__clientID, "RightJoint", sC.simx_opmode_blocking)[1])
         self.visionSensor = sim.simxGetObjectHandle(self.__clientID, "VisionSensor", sC.simx_opmode_blocking)[1]
 
+    """
+    ALWAYS RUN LAST
+    """
     def close_sim_connection(self):
-        # send some data to CoppeliaSim in a non-blocking fashion:
-        # sim.simxAddStatusbarMessage(__clientID, "PEACE OUT CoppeliaSim", sim.simx_opmode_oneshot)
-
         # make sure that the last command sent out had time to arrive
         sim.simxGetPingTime(self.__clientID)
-
         # close the connection to CoppeliaSim
         sim.simxFinish(self.__clientID)
 
+    """
+    prints string (msg) in coppelia command window
+    """
     def send_msg(self, msg):
         sim.simxAddStatusbarMessage(self.__clientID, msg, sC.simx_opmode_oneshot)
 
+    """
+    reads poximity sensor data
+    return: 
+    - lengths to nearest object
+        [LeftSensor, FrontSensor, RightSensor] : List
+            each cell contains distance to nearest object (in meters)
+            OR None value if nothing has been detected
+            
+    """
     def get_proxys(self):
         dists = [0,0,0]
         dists[0], temp, temp = sim.simxReadProximitySensor(self.__clientID, self.proxySensors[0], sC.simx_opmode_blocking)[2:5]
@@ -46,24 +58,21 @@ class Boundary(object):
         del temp
         for n in range(len(dists)):
             dists[n] = math.sqrt((dists[n][0]) ** 2 + (dists[n][1]) ** 2 + (dists[n][2]) ** 2)
-            if dists[n] < 0.05: dists[n] = 0
+            if dists[n] < 0.05: dists[n] = None
 
         return dists
 
+    """
+    takes picture with robot's camera (optical / vision sensor)
+    returns:
+    - image
+        [y, x, colors] : numpy array
+            note: colors=[r,g,b]
+    """
     def get_vision(self):
-        # temp, temp, data = sim.simxReadVisionSensor(self.__clientID, self.visionSensor,sC.simx_opmode_blocking)
-        # del temp
-        # print(type(data))
-        # print(data)
-        # print(len(data))
 
-        print(sim.simxGetVisionSensorImage(self.__clientID, self.visionSensor, 0, sC.simx_opmode_blocking))
+        [width,height], data = sim.simxGetVisionSensorImage(self.__clientID,self.visionSensor,0,sC.simx_opmode_blocking)[1:2]
 
-        # local
-        # newAttr = sim_displayattribute_renderpass
-        # newAttr = newAttr + sim_displayattribute_forvisionsensor
-        # newAttr = newAttr + sim_displayattribute_ignorerenderableflag
-        # simSetObjectInt32Parameter(visionSensorHandle, sim_visionintparam_rendering_attributes, newAttr)
         return 0
 
     def set_left_motor(self):
