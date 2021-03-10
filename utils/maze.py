@@ -9,6 +9,7 @@ class Maze():
         self.CELL = 'c'
         self.WALL = 'w'
         self.UNVISITED_CELL = 'u'
+        self.OBJECT = 'O'
         self.opening = opening
 
     def render(self):
@@ -17,8 +18,10 @@ class Maze():
             for col in range(self.width):
                 if (self.maze[col][row] == self.CELL):
                     print(Fore.WHITE, f'{self.maze[col][row]}' + ' ', end='')
-                else:
+                elif (self.maze[col][row] == self.WALL):
                     print(Fore.RED, f'{self.maze[col][row]}' + ' ', end='')
+                elif (self.maze[col][row] == self.OBJECT):
+                    print(Fore.YELLOW, f'{self.maze[col][row]}' + ' ', end='')    
             print()
 
     def initialize(self):
@@ -53,26 +56,26 @@ class Maze():
     def create_opening(self):
         if self.opening == 'west':
             for y in range(self.length):
-                if self.maze[1][y] == self.CELL:
+                if (self.maze[1][y] == self.CELL):
                     self.maze[0][y] = self.CELL
                     break
         if self.opening == 'east':
             for y in range(self.length):
-                if self.maze[self.width-2][y] == self.CELL:
+                if (self.maze[self.width-2][y] == self.CELL):
                     self.maze[self.width-1][y] = self.CELL
                     break
         if self.opening == 'north':
             for x in range(self.length):
-                if self.maze[x][1] == self.CELL:
+                if (self.maze[x][1] == self.CELL):
                     self.maze[x][0] = self.CELL
                     break
         if self.opening == 'south':
             for x in range(self.length):
-                if self.maze[x][self.length-2] == self.CELL:
+                if (self.maze[x][self.length-2] == self.CELL):
                     self.maze[x][self.length-1] = self.CELL
                     break
 
-    def generate(self, opening='west'):
+    def generate_maze(self, opening='west'):
         walls = []
 
         seed()
@@ -118,14 +121,34 @@ class Maze():
 
         for col in range(self.width):
             for row in range(self.length):
-                if self.maze[col][row] == self.UNVISITED_CELL:
+                if (self.maze[col][row] == self.UNVISITED_CELL):
                     self.maze[col][row] = self.WALL
 
         self.create_opening()
+
+    def generate_object(self):
+        deadends = []
+
+        for col in range(self.width):
+            for row in range(self.length):
+                if (self.maze[col][row] == self.CELL):
+                    surrounding_blocks = self.get_block_surroundings(col, row)
+                    surrounding_cells = sum(block == self.WALL for block in surrounding_blocks.values())
+                    if (surrounding_cells > 2):
+                        deadends.append([col, row])
+                        # print(surrounding_blocks)
+                        # break
+        seed()
+        rand_pos = randint(0, len(deadends)-1)
+        obj_x, obj_y = deadends[rand_pos]
+        self.maze[obj_x][obj_y] = self.OBJECT
 
 if __name__ == "__main__":
     l = 20
     w = 25
     m = Maze(l, w, 'west')
-    m.generate()
+    m.generate_maze()
+    m.render()
+    print()
+    m.generate_object()
     m.render()
