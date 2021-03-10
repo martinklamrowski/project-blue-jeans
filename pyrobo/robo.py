@@ -16,7 +16,9 @@ class Robo(object):
         # starts at 0, 0 (top left corner)
         self.pos_i = 0
         self.pos_j = 0
-        self.orientation = consts.EAST
+        self.vel_x = 0
+        self.vel_y = 0
+        self.orientation = consts.EAST          # TODO : Change this to deg or rad.
         self.mode = consts.EXPLORATION_MODE
 
         # interface with Coppelia
@@ -179,3 +181,16 @@ class Robo(object):
             raise ValueError("""
                 Fuck you.
             """)
+
+    def accelerate_forward(self):
+        # TODO : Using self.vel_x as speed for now.
+        self.vel_x -= consts.ACCELERATION
+        self.boundary.set_left_motor_velocity(self.vel_x)
+        self.boundary.set_right_motor_velocity(self.vel_x)
+
+    def accelerate_backward(self):
+        self.vel_x += consts.ACCELERATION
+        self.boundary.set_left_motor_velocity(self.vel_x)
+        self.boundary.set_right_motor_velocity(self.vel_x)
+
+

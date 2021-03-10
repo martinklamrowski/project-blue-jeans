@@ -54,11 +54,13 @@ class Boundary(object):
         # print(len(data[0]))
         return 0
 
-    def set_left_motor(self):
-        print(self.motors)
+    def set_left_motor_velocity(self, vel):
+        handle = self.__scene_objects["left_motor"]
+        sim.simxSetJointTargetVelocity(self.__clientID, handle, vel, sC.simx_opmode_oneshot)
 
-    def set_right_motor(self):
-        print(self.motors)
+    def set_right_motor_velocity(self, vel):
+        handle = self.__scene_objects["right_motor"]
+        sim.simxSetJointTargetVelocity(self.__clientID, handle, vel, sC.simx_opmode_oneshot)
 
     def raise_arm_left_step(self, step):
         """
@@ -66,13 +68,13 @@ class Boundary(object):
         :param step: int -> Distance to move from current position.
         :return: None
         """
-        # note: folder0 = right arm TODO : Make intuitive names.
-        handle = self.__scene_objects["folder1"]
+        handle = self.__scene_objects["arm_joint_left"]
         step_rad = -step * math.pi / 180
 
         current_position = self.__get_joint_pos(handle)
 
-        sim.simxSetJointTargetPosition(self.__clientID, handle, current_position[1] + step_rad, sC.simx_opmode_oneshot)
+        sim.simxSetJointTargetPosition(self.__clientID, handle,
+                                       current_position[1] + step_rad, sC.simx_opmode_oneshot)
 
     def raise_arm_right_step(self, step):
         """
@@ -80,13 +82,13 @@ class Boundary(object):
         :param step: int -> Distance to move from current position.
         :return: None
         """
-        # note: folder0 = right arm TODO : Make intuitive names.
-        handle = self.__scene_objects["folder0"]
+        handle = self.__scene_objects["arm_joint_right"]
         step_rad = -step * math.pi / 180
 
         current_position = self.__get_joint_pos(handle)
 
-        sim.simxSetJointTargetPosition(self.__clientID, handle, current_position[1] + step_rad, sC.simx_opmode_oneshot)
+        sim.simxSetJointTargetPosition(self.__clientID, handle,
+                                       current_position[1] + step_rad, sC.simx_opmode_oneshot)
 
     def lower_arm_left_step(self, step):
         """
@@ -94,13 +96,13 @@ class Boundary(object):
         :param step: int -> Distance to move from current position.
         :return: None
         """
-        # note: folder0 = right arm TODO : Make intuitive names.
-        handle = self.__scene_objects["folder1"]
+        handle = self.__scene_objects["arm_joint_left"]
         step_rad = -step * math.pi / 180
 
         current_position = self.__get_joint_pos(handle)
 
-        sim.simxSetJointTargetPosition(self.__clientID, handle, current_position[1] - step_rad, sC.simx_opmode_oneshot)
+        sim.simxSetJointTargetPosition(self.__clientID, handle,
+                                       current_position[1] - step_rad, sC.simx_opmode_oneshot)
 
     def lower_arm_right_step(self, step):
         """
@@ -108,33 +110,33 @@ class Boundary(object):
         :param step: int -> Distance to move from current position.
         :return: None
         """
-        # note: folder0 = right arm TODO : Make intuitive names.
-        handle = self.__scene_objects["folder0"]
+        handle = self.__scene_objects["arm_joint_right"]
         step_rad = -step * math.pi / 180
 
         current_position = self.__get_joint_pos(handle)
 
-        sim.simxSetJointTargetPosition(self.__clientID, handle, current_position[1] - step_rad, sC.simx_opmode_oneshot)
+        sim.simxSetJointTargetPosition(self.__clientID, handle,
+                                       current_position[1] - step_rad, sC.simx_opmode_oneshot)
 
     def reset_arm_right_pos(self):
         """
         Sets the target position of the left joint to 0.
         :return: None
         """
-        # note: folder0 = right arm TODO : Make intuitive names.
-        handle = self.__scene_objects["folder0"]
+        handle = self.__scene_objects["arm_joint_right"]
 
-        sim.simxSetJointTargetPosition(self.__clientID, handle, 0, sC.simx_opmode_oneshot)
+        sim.simxSetJointTargetPosition(self.__clientID, handle,
+                                       0, sC.simx_opmode_oneshot)
 
     def reset_arm_left_pos(self):
         """
         Sets the target position of the left joint to 0.
         :return: None
         """
-        # note: folder0 = right arm TODO : Make intuitive names.
-        handle = self.__scene_objects["folder1"]
+        handle = self.__scene_objects["arm_joint_left"]
 
-        sim.simxSetJointTargetPosition(self.__clientID, handle, 0, sC.simx_opmode_oneshot)
+        sim.simxSetJointTargetPosition(self.__clientID, handle,
+                                       0, sC.simx_opmode_oneshot)
 
     def __get_joint_pos(self, handle):
         return sim.simxGetJointPosition(self.__clientID, handle, sC.simx_opmode_blocking)
@@ -153,10 +155,14 @@ class Boundary(object):
                                                             sC.simx_opmode_blocking)[1],
             "RightProximitySensor": sim.simxGetObjectHandle(self.__clientID, "RightProximitySensor",
                                                             sC.simx_opmode_blocking)[1],
-            "folder0": sim.simxGetObjectHandle(self.__clientID, "folder0",
-                                               sC.simx_opmode_blocking)[1],
-            "folder1": sim.simxGetObjectHandle(self.__clientID, "folder1",
-                                               sC.simx_opmode_blocking)[1],
+            "arm_joint_left": sim.simxGetObjectHandle(self.__clientID, "arm_joint_left",
+                                                      sC.simx_opmode_blocking)[1],
+            "arm_joint_right": sim.simxGetObjectHandle(self.__clientID, "arm_joint_right",
+                                                       sC.simx_opmode_blocking)[1],
+            "left_motor": sim.simxGetObjectHandle(self.__clientID, "left_motor",
+                                                  sC.simx_opmode_blocking)[1],
+            "right_motor": sim.simxGetObjectHandle(self.__clientID, "right_motor",
+                                                   sC.simx_opmode_blocking)[1]
         }
 
         return objects_dict

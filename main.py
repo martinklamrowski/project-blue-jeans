@@ -33,13 +33,17 @@ def main():
     while True:
         if keyboard.is_pressed("u"):
             robo.raise_arm_step(consts.LEFT_ARM)
-        elif keyboard.is_pressed("i"):
-            robo.raise_arm_step(consts.RIGHT_ARM)
         elif keyboard.is_pressed("j"):
             robo.lower_arm_step(consts.LEFT_ARM)
+        if keyboard.is_pressed("i"):
+            robo.raise_arm_step(consts.RIGHT_ARM)
         elif keyboard.is_pressed("k"):
             robo.lower_arm_step(consts.RIGHT_ARM)
 
+        if keyboard.is_pressed("w"):
+            robo.accelerate_forward()
+        elif keyboard.is_pressed("s"):
+            robo.accelerate_backward()
 
 
     #     robo.move_to_next(fake_maze)
