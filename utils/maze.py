@@ -2,13 +2,14 @@ from random import seed, randint
 from colorama import init, Fore
 
 class Maze():
-    def __init__(self, length, width) -> None:
+    def __init__(self, length, width, opening) -> None:
         self.length = length
         self.width = width
         self.maze = []
         self.CELL = 'c'
         self.WALL = 'w'
         self.UNVISITED_CELL = 'u'
+        self.opening = opening
 
     def render(self):
         init()
@@ -49,29 +50,29 @@ class Maze():
 
         return surrounding_blocks
 
-    def create_opening(self, wall):
-        if wall == 'west':
+    def create_opening(self):
+        if self.opening == 'west':
             for y in range(self.length):
                 if self.maze[1][y] == self.CELL:
                     self.maze[0][y] = self.CELL
                     break
-        if wall == 'east':
+        if self.opening == 'east':
             for y in range(self.length):
                 if self.maze[self.width-2][y] == self.CELL:
                     self.maze[self.width-1][y] = self.CELL
                     break
-        if wall == 'north':
+        if self.opening == 'north':
             for x in range(self.length):
                 if self.maze[x][1] == self.CELL:
                     self.maze[x][0] = self.CELL
                     break
-        if wall == 'south':
+        if self.opening == 'south':
             for x in range(self.length):
                 if self.maze[x][self.length-2] == self.CELL:
                     self.maze[x][self.length-1] = self.CELL
                     break
 
-    def generate(self):
+    def generate(self, opening='west'):
         walls = []
 
         seed()
@@ -106,6 +107,7 @@ class Maze():
                 for direction in surrounding_blocks:
                     if (surrounding_blocks[direction] == self.CELL and surrounding_blocks[CARDINAL_COMPLEMENTS[direction]] == self.UNVISITED_CELL):
                         self.maze[wall_x][wall_y] = self.CELL
+                        break
                 for direction in surrounding_blocks:
                     if (surrounding_blocks[direction] == self.UNVISITED_CELL):
                         new_x, new_y = cartesian_surroundings[direction]
@@ -114,16 +116,16 @@ class Maze():
 
             walls.remove([wall_x, wall_y])
 
-        for col in self.maze:
-            for block in col:
-                if block == self.UNVISITED_CELL:
-                    block = self.WALL
+        for col in range(self.width):
+            for row in range(self.length):
+                if self.maze[col][row] == self.UNVISITED_CELL:
+                    self.maze[col][row] = self.WALL
 
-        self.create_opening('west')
+        self.create_opening()
 
 if __name__ == "__main__":
-    l = 30
-    w = 30
-    m = Maze(l, w)
+    l = 20
+    w = 25
+    m = Maze(l, w, 'west')
     m.generate()
     m.render()
