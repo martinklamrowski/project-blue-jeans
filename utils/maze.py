@@ -2,17 +2,26 @@ from random import seed, randint
 from colorama import init, Fore
 
 class Maze():
-    def __init__(self, length, width, opening) -> None:
+    def __init__(self, length, width, opening):
+        """Constructor
+
+        Keyword arguments:
+        length -- Length of maze
+        width -- Width of maze
+        opening -- The wall for which an opening should be made {east, west, north, south}
+        """
+        # Maze boundaries
         self.length = length
         self.width = width
-        self.maze = []
+        self.maze = [] # Maze map
         self.CELL = 'c'
         self.WALL = 'w'
         self.UNVISITED_CELL = 'u'
         self.OBJECT = 'O'
-        self.opening = opening
+        self.opening = opening # Opening in the maze
 
     def render(self):
+        """Pretty prints maze."""
         init()
         for row in range(self.length):
             for col in range(self.width):
@@ -25,6 +34,7 @@ class Maze():
             print()
 
     def initialize(self):
+        """Initializes maze"""
         for _ in range(self.width):
             row = []
             for _ in range(self.length):
@@ -32,6 +42,12 @@ class Maze():
             self.maze.append(row)
 
     def get_cartesian_surroundings(self, x, y):
+        """Returns the coordinates of the neighbouring blocks (by edges, not vertices).
+
+        Keyword arguments:
+        x -- x-coordinate of block
+        y -- y-coordinate of block
+        """
         surroundings = {}
 
         surroundings["west"] = [x-1, y] if x > 0 else []
@@ -42,6 +58,12 @@ class Maze():
         return surroundings
 
     def get_block_surroundings(self, x, y):
+        """Returns neighbouring blocks (by edges, not vertices).
+
+        Keyword arguments:
+        x -- x-coordinate of block
+        y -- y-coordinate of block
+        """
         cartesian_surroundings = self.get_cartesian_surroundings(x, y)        
 
         surrounding_blocks = {"west": [], "east": [], "north": [], "south": []}
@@ -54,6 +76,7 @@ class Maze():
         return surrounding_blocks
 
     def create_opening(self):
+        """Creates first opening on one of the four walls of the maze.""" 
         if self.opening == 'west':
             for y in range(self.length):
                 if (self.maze[1][y] == self.CELL):
@@ -76,8 +99,14 @@ class Maze():
                     break
 
     def generate_maze(self, opening='west'):
-        walls = []
+        """Generates a maze using Prim's Random Maze Generation algorithm
 
+        Keyword arguments:
+        opening -- Opening to the maze
+        """
+        walls = [] # All coorindate pairs of walls in the maze
+
+        # Initializing algorithm
         seed()
         STARTING_X = randint(1, self.width-2)
         STARTING_Y = randint(1, self.length-2)
@@ -98,6 +127,8 @@ class Maze():
 
         CARDINAL_COMPLEMENTS = {"west": "east", "east": "west", "north": "south", "south": "north"}
 
+        # Turns walls (w) into a path block (c) when it divides an already visited path block and an unvisisted block (u)
+        # only when the walls are surrounded by only one visited path block.
         while (walls):
             rand_wall = walls[randint(0, len(walls)-1)]
             wall_x, wall_y = rand_wall
@@ -119,6 +150,7 @@ class Maze():
 
             walls.remove([wall_x, wall_y])
 
+        # Cleans up redundant blocks
         for col in range(self.width):
             for row in range(self.length):
                 if (self.maze[col][row] == self.UNVISITED_CELL):
@@ -127,6 +159,7 @@ class Maze():
         self.create_opening()
 
     def generate_object(self):
+        """Randomly generates an object position at a deadend in the maze."""
         deadends = []
 
         for col in range(self.width):
@@ -136,8 +169,7 @@ class Maze():
                     surrounding_cells = sum(block == self.WALL for block in surrounding_blocks.values())
                     if (surrounding_cells > 2):
                         deadends.append([col, row])
-                        # print(surrounding_blocks)
-                        # break
+                        
         seed()
         rand_pos = randint(0, len(deadends)-1)
         obj_x, obj_y = deadends[rand_pos]
