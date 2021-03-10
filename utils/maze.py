@@ -33,6 +33,18 @@ class Maze():
                     print(Fore.YELLOW, f'{self.maze[col][row]}' + ' ', end='')    
             print()
 
+    def output(self, filepath='map.txt'):
+        """Outputs maze to a file
+        
+        Keyword arguments:
+        filepath -- Path to file that will store maze
+        """
+        with open(filepath, 'a') as writer:
+            for row in range(self.length):
+                for col in range(self.width):
+                    writer.write(self.maze[col][row] + ' ')
+                writer.write('\n')
+
     def initialize(self):
         """Initializes maze"""
         for _ in range(self.width):
@@ -169,7 +181,7 @@ class Maze():
                     surrounding_cells = sum(block == self.WALL for block in surrounding_blocks.values())
                     if (surrounding_cells > 2):
                         deadends.append([col, row])
-                        
+
         seed()
         rand_pos = randint(0, len(deadends)-1)
         obj_x, obj_y = deadends[rand_pos]
@@ -184,3 +196,4 @@ if __name__ == "__main__":
     print()
     m.generate_object()
     m.render()
+    m.output()
