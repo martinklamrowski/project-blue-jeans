@@ -1,6 +1,8 @@
 from utils.maze_map import MazeMap
 import utils.constants as consts
 
+import math
+
 
 class Robo(object):
     def __init__(self, boundary=None, testing=True):
@@ -182,15 +184,76 @@ class Robo(object):
                 Fuck you.
             """)
 
-    def accelerate_forward(self):
-        # TODO : Using self.vel_x as speed for now.
-        self.vel_x -= consts.ACCELERATION
-        self.boundary.set_left_motor_velocity(self.vel_x)
-        self.boundary.set_right_motor_velocity(self.vel_x)
+    def accelerate_forward(self, turn):
+        if math.fabs(self.vel_y - consts.ACCELERATION) > consts.VELOCITY_THRESHOLD:
+            self.vel_y = -consts.VELOCITY_THRESHOLD
+        else:
+            self.vel_y -= consts.ACCELERATION
 
-    def accelerate_backward(self):
-        self.vel_x += consts.ACCELERATION
-        self.boundary.set_left_motor_velocity(self.vel_x)
-        self.boundary.set_right_motor_velocity(self.vel_x)
+        if turn == "left":
+            # if math.fabs(self.vel_x - consts.ACCELERATION) > consts.VELOCITY_THRESHOLD:
+            #     self.vel_x = -consts.VELOCITY_THRESHOLD
+            # else:
+            #     self.vel_x -= consts.ACCELERATION
+            self.vel_x = -consts.VELOCITY_THRESHOLD
+            right_wheel_comp = -self.__get_hypotenuse_component(self.vel_x, self.vel_y)
+            left_wheel_comp = self.vel_y
+        elif turn == "right":
+            # if math.fabs(self.vel_x - consts.ACCELERATION) > consts.VELOCITY_THRESHOLD:
+            #     self.vel_x = -consts.VELOCITY_THRESHOLD
+            # else:
+            #     self.vel_x -= consts.ACCELERATION
+            self.vel_x = -consts.VELOCITY_THRESHOLD
+            left_wheel_comp = -self.__get_hypotenuse_component(self.vel_x, self.vel_y)
+            right_wheel_comp = self.vel_y
+        else:
+            self.vel_x = 0
+            left_wheel_comp = self.vel_y
+            right_wheel_comp = self.vel_y
 
+        self.boundary.set_left_motor_velocity(left_wheel_comp)
+        self.boundary.set_right_motor_velocity(right_wheel_comp)
 
+    def accelerate_backward(self, turn):
+        if self.vel_y + consts.ACCELERATION > consts.VELOCITY_THRESHOLD:
+            self.vel_y = consts.VELOCITY_THRESHOLD
+        else:
+            self.vel_y += consts.ACCELERATION
+
+        if turn == "left":
+            # if math.fabs(self.vel_x - consts.ACCELERATION) > consts.VELOCITY_THRESHOLD:
+            #     self.vel_x = -consts.VELOCITY_THRESHOLD
+            # else:
+            #     self.vel_x -= consts.ACCELERATION
+            self.vel_x = consts.VELOCITY_THRESHOLD
+            right_wheel_comp = self.__get_hypotenuse_component(self.vel_x, self.vel_y)
+            left_wheel_comp = self.vel_y
+        elif turn == "right":
+            # if math.fabs(self.vel_x - consts.ACCELERATION) > consts.VELOCITY_THRESHOLD:
+            #     self.vel_x = -consts.VELOCITY_THRESHOLD
+            # else:
+            #     self.vel_x -= consts.ACCELERATION
+            self.vel_x = consts.VELOCITY_THRESHOLD
+            left_wheel_comp = self.__get_hypotenuse_component(self.vel_x, self.vel_y)
+            right_wheel_comp = self.vel_y
+        else:
+            self.vel_x = 0
+            left_wheel_comp = self.vel_y
+            right_wheel_comp = self.vel_y
+
+        self.boundary.set_left_motor_velocity(left_wheel_comp)
+        self.boundary.set_right_motor_velocity(right_wheel_comp)
+
+    def decelerate(self):
+        """
+        Function to decelerate the robo in whichever direction it is currently traveling.
+        :return: None
+        """
+        # TODO : Using self.vel_y as speed for now.
+        if self.vel_y != 0:
+            self.vel_y = self.vel_y + consts.ACCELERATION if self.vel_y < 0 else self.vel_y - consts.ACCELERATION
+        self.boundary.set_left_motor_velocity(self.vel_y)
+        self.boundary.set_right_motor_velocity(self.vel_y)
+
+    def __get_hypotenuse_component(self, x, y):
+        return math.sqrt((x**2 + y**2))

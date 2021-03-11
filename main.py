@@ -26,6 +26,7 @@ def main():
 
     # print(b.get_proxy())
 
+    # TODO : Change Boundary-Robo relationship to composition, not aggregation.
     robo = Robo(boundary=b, testing=False)
     # robo.print_map()
 
@@ -41,9 +42,21 @@ def main():
             robo.lower_arm_step(consts.RIGHT_ARM)
 
         if keyboard.is_pressed("w"):
-            robo.accelerate_forward()
+            if keyboard.is_pressed("a"):
+                robo.accelerate_forward(turn="left")
+            elif keyboard.is_pressed("d"):
+                robo.accelerate_forward(turn="right")
+            else:
+                robo.accelerate_forward(turn=None)
         elif keyboard.is_pressed("s"):
-            robo.accelerate_backward()
+            if keyboard.is_pressed("a"):
+                robo.accelerate_backward(turn="left")
+            elif keyboard.is_pressed("d"):
+                robo.accelerate_backward(turn="right")
+            else:
+                robo.accelerate_backward(turn=None)
+        else:
+            robo.decelerate()
 
 
     #     robo.move_to_next(fake_maze)
