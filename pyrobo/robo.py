@@ -1,6 +1,8 @@
 from utils.maze_map import MazeMap
 import utils.constants as consts
 
+import math
+
 
 class Robo(object):
     def __init__(self, boundary=None, testing=True):
@@ -16,7 +18,9 @@ class Robo(object):
         # starts at 0, 0 (top left corner)
         self.pos_i = 0
         self.pos_j = 0
-        self.orientation = consts.EAST
+        self.vel_x = 0
+        self.vel_y = 0
+        self.orientation = consts.EAST          # TODO : Change this to deg or rad.
         self.mode = consts.EXPLORATION_MODE
 
         # interface with Coppelia
@@ -44,7 +48,6 @@ class Robo(object):
 
         :return: None
         """
-
         if self.testing:
             if testing_map is None:
                 raise TypeError("""
@@ -84,7 +87,6 @@ class Robo(object):
 
         :return: int -> representing a cardinal point from constants.py
         """
-
         if self.orientation == consts.NORTH:
             cardinal_point = consts.WEST
         else:
@@ -99,7 +101,6 @@ class Robo(object):
 
         :return: int -> representing a cardinal point from constants.py
         """
-
         if self.orientation == consts.WEST:
             cardinal_point = consts.NORTH
         else:
@@ -114,7 +115,6 @@ class Robo(object):
 
         :return: int -> representing a cardinal point from constants.py
         """
-
         if self.orientation == consts.NORTH or self.orientation == consts.EAST:
             cardinal_point = self.orientation + 2
         else:
@@ -130,7 +130,6 @@ class Robo(object):
         :param heading: int -> representing a cardinal point from constants.py
         :return: None
         """
-
         if heading == consts.EAST:
             self.pos_i += 1
         elif heading == consts.SOUTH:
@@ -165,3 +164,96 @@ class Robo(object):
             north_node = self.maze_map.get_map_node_at_pos(map_node.j - 1, map_node.i)
             north_node.walls[consts.SOUTH] = True  # TODO: Fugly.
 
+    def raise_arm_step(self, arm):
+        if arm == consts.LEFT_ARM:
+            self.boundary.raise_arm_left_step(consts.ARM_STEP_SIZE_DEG)
+        elif arm == consts.RIGHT_ARM:
+            self.boundary.raise_arm_right_step(consts.ARM_STEP_SIZE_DEG)
+        else:
+            raise ValueError("""
+                Fuck you.
+            """)
+
+    def lower_arm_step(self, arm):
+        if arm == consts.LEFT_ARM:
+            self.boundary.lower_arm_left_step(consts.ARM_STEP_SIZE_DEG)
+        elif arm == consts.RIGHT_ARM:
+            self.boundary.lower_arm_right_step(consts.ARM_STEP_SIZE_DEG)
+        else:
+            raise ValueError("""
+                Fuck you.
+            """)
+
+    def accelerate_forward(self, turn):
+        if math.fabs(self.vel_y - consts.ACCELERATION) > consts.VELOCITY_THRESHOLD:
+            self.vel_y = -consts.VELOCITY_THRESHOLD
+        else:
+            self.vel_y -= consts.ACCELERATION
+
+        if turn == "left":
+            # if math.fabs(self.vel_x - consts.ACCELERATION) > consts.VELOCITY_THRESHOLD:
+            #     self.vel_x = -consts.VELOCITY_THRESHOLD
+            # else:
+            #     self.vel_x -= consts.ACCELERATION
+            self.vel_x = -consts.VELOCITY_THRESHOLD
+            right_wheel_comp = -self.__get_hypotenuse_component(self.vel_x, self.vel_y)
+            left_wheel_comp = self.vel_y
+        elif turn == "right":
+            # if math.fabs(self.vel_x - consts.ACCELERATION) > consts.VELOCITY_THRESHOLD:
+            #     self.vel_x = -consts.VELOCITY_THRESHOLD
+            # else:
+            #     self.vel_x -= consts.ACCELERATION
+            self.vel_x = -consts.VELOCITY_THRESHOLD
+            left_wheel_comp = -self.__get_hypotenuse_component(self.vel_x, self.vel_y)
+            right_wheel_comp = self.vel_y
+        else:
+            self.vel_x = 0
+            left_wheel_comp = self.vel_y
+            right_wheel_comp = self.vel_y
+
+        self.boundary.set_left_motor_velocity(left_wheel_comp)
+        self.boundary.set_right_motor_velocity(right_wheel_comp)
+
+    def accelerate_backward(self, turn):
+        if self.vel_y + consts.ACCELERATION > consts.VELOCITY_THRESHOLD:
+            self.vel_y = consts.VELOCITY_THRESHOLD
+        else:
+            self.vel_y += consts.ACCELERATION
+
+        if turn == "left":
+            # if math.fabs(self.vel_x - consts.ACCELERATION) > consts.VELOCITY_THRESHOLD:
+            #     self.vel_x = -consts.VELOCITY_THRESHOLD
+            # else:
+            #     self.vel_x -= consts.ACCELERATION
+            self.vel_x = consts.VELOCITY_THRESHOLD
+            right_wheel_comp = self.__get_hypotenuse_component(self.vel_x, self.vel_y)
+            left_wheel_comp = self.vel_y
+        elif turn == "right":
+            # if math.fabs(self.vel_x - consts.ACCELERATION) > consts.VELOCITY_THRESHOLD:
+            #     self.vel_x = -consts.VELOCITY_THRESHOLD
+            # else:
+            #     self.vel_x -= consts.ACCELERATION
+            self.vel_x = consts.VELOCITY_THRESHOLD
+            left_wheel_comp = self.__get_hypotenuse_component(self.vel_x, self.vel_y)
+            right_wheel_comp = self.vel_y
+        else:
+            self.vel_x = 0
+            left_wheel_comp = self.vel_y
+            right_wheel_comp = self.vel_y
+
+        self.boundary.set_left_motor_velocity(left_wheel_comp)
+        self.boundary.set_right_motor_velocity(right_wheel_comp)
+
+    def decelerate(self):
+        """
+        Function to decelerate the robo in whichever direction it is currently traveling.
+        :return: None
+        """
+        # TODO : Using self.vel_y as speed for now.
+        if self.vel_y != 0:
+            self.vel_y = self.vel_y + consts.ACCELERATION if self.vel_y < 0 else self.vel_y - consts.ACCELERATION
+        self.boundary.set_left_motor_velocity(self.vel_y)
+        self.boundary.set_right_motor_velocity(self.vel_y)
+
+    def __get_hypotenuse_component(self, x, y):
+        return math.sqrt((x**2 + y**2))
