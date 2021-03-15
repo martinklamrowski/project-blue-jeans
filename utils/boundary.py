@@ -2,6 +2,8 @@ import sim_lib.sim as sim
 import sim_lib.simConst as sC
 import math
 import numpy as np
+import matplotlib.pyplot as plt
+import time
 
 
 class Boundary(object):
@@ -58,20 +60,44 @@ class Boundary(object):
         del temp
         for n in range(len(dists)):
             dists[n] = math.sqrt((dists[n][0]) ** 2 + (dists[n][1]) ** 2 + (dists[n][2]) ** 2)
-            if dists[n] < 0.05: dists[n] = None
-
+            # if dists[n]<2.5 and dists[n]>=1.5:  dists[n] = 2
+            if dists[n]<1.5 and dists[n]>=0.35:  dists[n] = 1
+            elif dists[n]<0.35 and dists[n]>=0.05: dists[n] = 0
+            # elif dists[n] < 0.05: dists[n] = None
+            else: dists[n] = None
         return dists
 
     """
-    takes picture with robot's camera (optical / vision sensor)
+    takes picture with robot's camera (optical / vision sensor)     
+    NOTE: we are using only the top half of the sensor! (this method will crop it)
     returns:
     - image
         [y, x, colors] : numpy array
             note: colors=[r,g,b]
     """
     def get_vision(self):
+        # print(sim.simxGetVisionSensorImage(self.__clientID,self.visionSensor,0,sC.simx_opmode_blocking)[1:3])
+        # print(len(sim.simxGetVisionSensorImage(self.__clientID,self.visionSensor,0,sC.simx_opmode_blocking)[1:3]))
+        [width,height], data = sim.simxGetVisionSensorImage(self.__clientID,self.visionSensor,0,sC.simx_opmode_blocking)[1:3]
 
-        [width,height], data = sim.simxGetVisionSensorImage(self.__clientID,self.visionSensor,0,sC.simx_opmode_blocking)[1:2]
+        #   Conversion
+        image = np.ndarray((height,width,3), np.uint8)
+        # for d in range(len(data) // 2):
+        for h in range(height):
+            for w in range(width):
+                for c in range(3): # color
+                    image[h,w,c] = data[c + (width-w) * (h)]   # this doesnt work yet!
+                    print(h,w,c, '\t', c + (width-w) + width * (h))
+
+            # data[d] = 100
+            # if data[d] > 35: data[d] -= 36
+        print(type[data[0]])
+        print([width,height], data)
+        print()
+        print(image)
+        plt.axis("off")
+        plt.imshow(image)
+        plt.show()
 
         return 0
 
@@ -85,4 +111,12 @@ class Boundary(object):
 if __name__ == "__main__":
     b = Boundary(8008)
     b.send_msg("heyo!")
-    b.get_vision()
+    # b.get_vision()
+    while True:
+        l,c,r = b.get_proxys()
+        b.send_msg("left: " + str(l) + "\tcenter:" + str(c) + "\tright:" + str(r))
+        if c == 0:
+            b.send_msg("STOP!!!!!!!!!!!!!!")
+            break
+
+    b.close_sim_connection()
