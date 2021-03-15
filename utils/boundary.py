@@ -3,6 +3,7 @@ import sim_lib.simConst as sC
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 
 
 class Boundary(object):
@@ -59,8 +60,11 @@ class Boundary(object):
         del temp
         for n in range(len(dists)):
             dists[n] = math.sqrt((dists[n][0]) ** 2 + (dists[n][1]) ** 2 + (dists[n][2]) ** 2)
-            if dists[n] < 0.05: dists[n] = None
-
+            # if dists[n]<2.5 and dists[n]>=1.5:  dists[n] = 2
+            if dists[n]<1.5 and dists[n]>=0.35:  dists[n] = 1
+            elif dists[n]<0.35 and dists[n]>=0.05: dists[n] = 0
+            # elif dists[n] < 0.05: dists[n] = None
+            else: dists[n] = None
         return dists
 
     """
@@ -82,14 +86,15 @@ class Boundary(object):
         for h in range(height):
             for w in range(width):
                 for c in range(3): # color
-                    image[h,w,c] = data[c + (w) * (h)]   # this doesnt work yet!
+                    image[h,w,c] = data[c + (width-w) * (h)]   # this doesnt work yet!
+                    print(h,w,c, '\t', c + (width-w) + width * (h))
 
             # data[d] = 100
             # if data[d] > 35: data[d] -= 36
         print(type[data[0]])
-        # print([width,height], data)
-        # print()
-        # print(image)
+        print([width,height], data)
+        print()
+        print(image)
         plt.axis("off")
         plt.imshow(image)
         plt.show()
@@ -106,4 +111,12 @@ class Boundary(object):
 if __name__ == "__main__":
     b = Boundary(8008)
     b.send_msg("heyo!")
-    b.get_vision()
+    # b.get_vision()
+    while True:
+        l,c,r = b.get_proxys()
+        b.send_msg("left: " + str(l) + "\tcenter:" + str(c) + "\tright:" + str(r))
+        if c == 0:
+            b.send_msg("STOP!!!!!!!!!!!!!!")
+            break
+
+    b.close_sim_connection()
