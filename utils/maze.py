@@ -1,5 +1,5 @@
 from random import seed, randint
-from colorama import init, Fore
+from colorama import init, Fore, ansi
 
 class Maze():
     def __init__(self, length, width, opening):
@@ -32,6 +32,7 @@ class Maze():
                 elif (self.maze[col][row] == self.OBJECT):
                     print(Fore.YELLOW, f'{self.maze[col][row]}' + ' ', end='')    
             print()
+        print(ansi.Style.RESET_ALL)
 
     def output(self, filepath='map.txt'):
         """Outputs maze to a file
@@ -187,13 +188,24 @@ class Maze():
         obj_x, obj_y = deadends[rand_pos]
         self.maze[obj_x][obj_y] = self.OBJECT
 
-if __name__ == "__main__":
-    l = 20
-    w = 25
-    m = Maze(l, w, 'west')
-    m.generate_maze()
-    m.render()
-    print()
-    m.generate_object()
-    m.render()
-    m.output()
+    def reduce(self):
+        """Reduces 2D maze map to 1D maze map"""
+        reduced_map = []
+        for col in self.maze:
+            for block in col:
+                reduced_map.append(block)
+
+        return reduced_map
+
+# if __name__ == "__main__":
+#     l = 20
+#     w = 25
+#     m = Maze(l, w, 'west')
+#     m.generate_maze()
+#     # m.render()
+#     # print()
+#     m.generate_object()
+#     m.render()
+#     # m.output()
+
+#     # print(m.maze)
