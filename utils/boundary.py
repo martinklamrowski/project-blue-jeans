@@ -69,9 +69,9 @@ class Boundary(object):
         dists[2], temp, temp = sim.simxReadProximitySensor(self.__clientID, self.proxySensors[2], sC.simx_opmode_blocking)[2:5]
         del temp
         for n in range(len(dists)):
-            dists[n] = math.sqrt((dists[n][0]) ** 2 + (dists[n][1]) ** 2 + (dists[n][2]) ** 2)
+            dists[n] = math.sqrt((dists[n][0]) ** 2 + (dists[n][1]) ** 2 + (dists[n][2]) ** 2) # get range from (y,x,z)
             # if dists[n]<2.5 and dists[n]>=1.5:  dists[n] = 2
-            if dists[n]<1.5 and dists[n]>=0.35:  dists[n] = 1
+            if dists[n]<1.5 and dists[n]>=0.35:  dists[n] = 1                                  # get how many blocksaway
             elif dists[n]<0.35 and dists[n]>=0.05: dists[n] = 0
             # elif dists[n] < 0.05: dists[n] = None
             else: dists[n] = None
