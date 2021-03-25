@@ -1,8 +1,8 @@
-from utils.maze_map import MazeMap
+import math
+import keyboard
+
 import utils.constants as consts
 import utils.vec as vec
-
-import math
 
 
 class Robo(object):
@@ -12,16 +12,13 @@ class Robo(object):
         # if you don't want to use Coppelia
         self.testing = testing
 
-        # the Robo's internal map of the maze; will be updated as it moves along
-        self.maze_map = MazeMap(10, 10, True)
-
         # the Robo's perceived position and orientation within the maze_map,
         # starts at 0, 0 (top left corner)
         self.pos_i = 0
         self.pos_j = 0
         self.vel_x = 0
         self.vel_y = 0
-        self.orientation = consts.EAST          # TODO : Change this to deg or rad.
+        self.orientation = consts.EAST  # TODO : Change this to deg or rad.
         self.mode = consts.EXPLORATION_MODE
 
         # interface with Coppelia
@@ -33,6 +30,43 @@ class Robo(object):
             """)
         self.boundary = boundary
 
+    def run(self):
+        while True:
+            if keyboard.is_pressed("u"):
+                self.__raise_arm_step(consts.LEFT_ARM)
+            elif keyboard.is_pressed("j"):
+                self.__lower_arm_step(consts.LEFT_ARM)
+            if keyboard.is_pressed("i"):
+                self.__raise_arm_step(consts.RIGHT_ARM)
+            elif keyboard.is_pressed("k"):
+                self.__lower_arm_step(consts.RIGHT_ARM)
+
+            if keyboard.is_pressed("w"):
+                if keyboard.is_pressed("a"):
+                    self.__accelerate_forward(turn="left")
+                elif keyboard.is_pressed("d"):
+                    self.__accelerate_forward(turn="right")
+                else:
+                    self.__accelerate_forward(turn=None)
+            elif keyboard.is_pressed("s"):
+                if keyboard.is_pressed("a"):
+                    self.__accelerate_backward(turn="left")
+                elif keyboard.is_pressed("d"):
+                    self.__accelerate_backward(turn="right")
+                else:
+                    self.__accelerate_backward(turn=None)
+            elif keyboard.is_pressed("e"):
+                self.__turn_right_on_spot(consts.EAST)
+            elif keyboard.is_pressed("q"):
+                self.__turn_right_on_spot(consts.WEST)
+            elif keyboard.is_pressed("c"):
+                self.__turn_right_on_spot(consts.NORTH)
+            elif keyboard.is_pressed("q"):
+                self.__turn_right_on_spot(consts.WEST)
+            else:
+                self.__decelerate()
+            print("{} X | {} Y".format(self.__get_vel_x(), self.__get_vel_y()))
+
     def print_map(self):
         """
         Prints the maze map as the Robo currently knows it.
@@ -41,7 +75,7 @@ class Robo(object):
         """
         print(self.maze_map)
 
-    def move_to_next(self, testing_map=None):
+    def __move_to_next(self, testing_map=None):
         """
         This will be the method to compute the next move for the Robo based on its current square.
         TODO: Need sensor info from Boundary here, will emulate for now. Remove testing_map
@@ -165,7 +199,7 @@ class Robo(object):
             north_node = self.maze_map.get_map_node_at_pos(map_node.j - 1, map_node.i)
             north_node.walls[consts.SOUTH] = True  # TODO: Fugly.
 
-    def raise_arm_step(self, arm):
+    def __raise_arm_step(self, arm):
         if arm == consts.LEFT_ARM:
             self.boundary.raise_arm_left_step(consts.ARM_STEP_SIZE_DEG)
         elif arm == consts.RIGHT_ARM:
@@ -175,7 +209,7 @@ class Robo(object):
                 Fuck you.
             """)
 
-    def lower_arm_step(self, arm):
+    def __lower_arm_step(self, arm):
         if arm == consts.LEFT_ARM:
             self.boundary.lower_arm_left_step(consts.ARM_STEP_SIZE_DEG)
         elif arm == consts.RIGHT_ARM:
@@ -185,35 +219,27 @@ class Robo(object):
                 Fuck you.
             """)
 
-    def get_vel_x(self):
+    def __get_vel_x(self):
         return self.vel_x
 
-    def get_vel_y(self):
+    def __get_vel_y(self):
         return self.vel_y
 
-    def turn_right_on_spot(self, direction):
-        self.boundary.turn_right_on_spot(consts.NOMINAL_VELOCITY, consts.ANGULAR_POINTS[direction])
+    def __turn_right_on_spot(self, direction):
+        self.boundary.__turn_right_on_spot(consts.NOMINAL_VELOCITY, consts.ANGULAR_POINTS[direction])
 
-    def accelerate_forward(self, turn):
+    def __accelerate_forward(self, turn):
         if math.fabs(self.vel_y - consts.ACCELERATION) > consts.VELOCITY_THRESHOLD:
             self.vel_y = -consts.VELOCITY_THRESHOLD
         else:
             self.vel_y -= consts.ACCELERATION
 
         if turn == "left":
-            # if math.fabs(self.vel_x - consts.ACCELERATION) > consts.VELOCITY_THRESHOLD:
-            #     self.vel_x = -consts.VELOCITY_THRESHOLD
-            # else:
-            #     self.vel_x -= consts.ACCELERATION
             self.vel_x = -consts.VELOCITY_THRESHOLD
             right_wheel_comp = -vec.get_hypotenuse_component(self.vel_x, self.vel_y)
             left_wheel_comp = self.vel_y
 
         elif turn == "right":
-            # if math.fabs(self.vel_x - consts.ACCELERATION) > consts.VELOCITY_THRESHOLD:
-            #     self.vel_x = -consts.VELOCITY_THRESHOLD
-            # else:
-            #     self.vel_x -= consts.ACCELERATION
             self.vel_x = -consts.VELOCITY_THRESHOLD
             right_wheel_comp = self.vel_y
             left_wheel_comp = -vec.get_hypotenuse_component(self.vel_x, self.vel_y)
@@ -226,26 +252,18 @@ class Robo(object):
         self.boundary.set_left_motor_velocity(left_wheel_comp)
         self.boundary.set_right_motor_velocity(right_wheel_comp)
 
-    def accelerate_backward(self, turn):
+    def __accelerate_backward(self, turn):
         if self.vel_y + consts.ACCELERATION > consts.VELOCITY_THRESHOLD:
             self.vel_y = consts.VELOCITY_THRESHOLD
         else:
             self.vel_y += consts.ACCELERATION
 
         if turn == "left":
-            # if math.fabs(self.vel_x - consts.ACCELERATION) > consts.VELOCITY_THRESHOLD:
-            #     self.vel_x = -consts.VELOCITY_THRESHOLD
-            # else:
-            #     self.vel_x -= consts.ACCELERATION
             self.vel_x = consts.VELOCITY_THRESHOLD
             right_wheel_comp = vec.get_hypotenuse_component(self.vel_x, self.vel_y)
             left_wheel_comp = self.vel_y
 
         elif turn == "right":
-            # if math.fabs(self.vel_x - consts.ACCELERATION) > consts.VELOCITY_THRESHOLD:
-            #     self.vel_x = -consts.VELOCITY_THRESHOLD
-            # else:
-            #     self.vel_x -= consts.ACCELERATION
             self.vel_x = consts.VELOCITY_THRESHOLD
             right_wheel_comp = self.vel_y
             left_wheel_comp = vec.get_hypotenuse_component(self.vel_x, self.vel_y)
@@ -258,9 +276,9 @@ class Robo(object):
         self.boundary.set_left_motor_velocity(left_wheel_comp)
         self.boundary.set_right_motor_velocity(right_wheel_comp)
 
-    def decelerate(self):
+    def __decelerate(self):
         """
-        Function to decelerate the robo in whichever direction it is currently traveling.
+        Function to __decelerate the robo in whichever direction it is currently traveling.
         :return: None
         """
         # TODO : Using self.vel_y as speed for now.
@@ -271,5 +289,3 @@ class Robo(object):
                 self.vel_y = self.vel_y + consts.ACCELERATION if self.vel_y < 0 else self.vel_y - consts.ACCELERATION
         self.boundary.set_left_motor_velocity(self.vel_y)
         self.boundary.set_right_motor_velocity(self.vel_y)
-
-

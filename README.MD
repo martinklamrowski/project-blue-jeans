@@ -11,9 +11,16 @@
 
 - OR Add robot_model.ttm to scene by File -> Import Model
 
+【Package/Module Dependencies】
+```bash
+$ pip install msgpack
+$ pip install colorama
+$ pip install keyboard
+```
+
 【Usage】
 ```bash
-$ python -p <port> cuboid.py
+$ python -p <port> main.py
 $ python main.py -p <port>
 ```
 current Coppelia Port = 8008

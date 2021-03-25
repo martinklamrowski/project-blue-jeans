@@ -1,9 +1,8 @@
 import argparse
 import time
-import keyboard
 
 from utils.boundary import Boundary
-from utils.maze_map import MazeMap
+from utils.maze import Maze
 from pyrobo.robo import Robo
 import utils.constants as consts
 
@@ -14,64 +13,21 @@ args = vars(ap.parse_args())
 
 
 def main():
-    # this is a test; the robo doesn't know about this maze, it will have a different one internally
-    fake_maze = MazeMap(10, 10, False)
-    print(fake_maze)
 
     # TODO: I think the Boundary instance should eventually be moved to Robo, could also
     #       just pass b to Robo() - that's what i'll do for now.
     b = Boundary(int(args["port"]))
-
-    # b.send_msg("heyo!")
-
-    # print(b.get_proxy())
-
-    # TODO : Change Boundary-Robo relationship to composition, not aggregation.
     robo = Robo(boundary=b, testing=False)
-    # robo.print_map()
 
-    # main routine
-    while True:
-        if keyboard.is_pressed("u"):
-            robo.raise_arm_step(consts.LEFT_ARM)
-        elif keyboard.is_pressed("j"):
-            robo.lower_arm_step(consts.LEFT_ARM)
-        if keyboard.is_pressed("i"):
-            robo.raise_arm_step(consts.RIGHT_ARM)
-        elif keyboard.is_pressed("k"):
-            robo.lower_arm_step(consts.RIGHT_ARM)
+    # generate maze
+    maze = Maze(length=20, width=25, opening="west")
+    maze.generate_maze()
+    maze.generate_object()
+    maze.render()
 
-        if keyboard.is_pressed("w"):
-            if keyboard.is_pressed("a"):
-                robo.accelerate_forward(turn="left")
-            elif keyboard.is_pressed("d"):
-                robo.accelerate_forward(turn="right")
-            else:
-                robo.accelerate_forward(turn=None)
-        elif keyboard.is_pressed("s"):
-            if keyboard.is_pressed("a"):
-                robo.accelerate_backward(turn="left")
-            elif keyboard.is_pressed("d"):
-                robo.accelerate_backward(turn="right")
-            else:
-                robo.accelerate_backward(turn=None)
-        elif keyboard.is_pressed("e"):
-            robo.turn_right_on_spot(consts.EAST)
-        elif keyboard.is_pressed("q"):
-            robo.turn_right_on_spot(consts.WEST)
-        elif keyboard.is_pressed("c"):
-            robo.turn_right_on_spot(consts.NORTH)
-        elif keyboard.is_pressed("q"):
-            robo.turn_right_on_spot(consts.WEST)
-        else:
-            robo.decelerate()
-        print("{} X | {} Y".format(robo.get_vel_x(), robo.get_vel_y()))
+    # go robo go
+    robo.run()
 
-
-    #     robo.move_to_next(fake_maze)
-    #     robo.print_map()
-    #     print("Robo's Current Position: {}j, {}i".format(robo.pos_j, robo.pos_i))
-    #     time.sleep(1)
 
 
 if __name__ == "__main__":
