@@ -92,7 +92,7 @@ class Robo(object):
             if self.mode == consts.EXPLORATION_MODE:
 
                 current_node = testing_map.get_map_node_at_pos(self.pos_j, self.pos_i)
-                self.maze_map.set_map_node(current_node)
+                self.maze_map.set_map_node(current_node) # TODO
                 self.__update_adjacent_map_nodes(current_node)
 
                 # is there a wall to the left of the Robo in its current square?

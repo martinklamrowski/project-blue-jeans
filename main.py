@@ -20,14 +20,13 @@ def main():
     robo = Robo(boundary=b, testing=False)
 
     # generate maze
-    maze = Maze(length=20, width=25, opening="west")
+    maze = Maze(length=10, width=10, opening="west")
     maze.generate_maze()
     maze.generate_object()
-    maze.render()
+    b.generate_maze_in_coppelia(maze=maze)
 
     # go robo go
     robo.run()
-
 
 
 if __name__ == "__main__":

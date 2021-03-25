@@ -1,11 +1,8 @@
 import math
+import time
 
 import sim_lib.sim as sim
 import sim_lib.simConst as sC
-import math
-import numpy as np
-import matplotlib.pyplot as plt
-import time
 
 import utils.vec as vec  # TODO : Move this dependency to robo.py.
 
@@ -27,9 +24,9 @@ class Boundary(object):
         self.__scene_objects = self.__get_scene_objects_dict()
         self.res, self.objs = sim.simxGetObjects(self.__clientID, sC.sim_handle_all, sC.simx_opmode_blocking)
         self.proxySensors = (
-        sim.simxGetObjectHandle(self.__clientID, "LeftProximitySensor", sC.simx_opmode_blocking)[1],
-        sim.simxGetObjectHandle(self.__clientID, "FrontProximitySensor", sC.simx_opmode_blocking)[1],
-        sim.simxGetObjectHandle(self.__clientID, "RightProximitySensor", sC.simx_opmode_blocking)[1])
+            sim.simxGetObjectHandle(self.__clientID, "LeftProximitySensor", sC.simx_opmode_blocking)[1],
+            sim.simxGetObjectHandle(self.__clientID, "FrontProximitySensor", sC.simx_opmode_blocking)[1],
+            sim.simxGetObjectHandle(self.__clientID, "RightProximitySensor", sC.simx_opmode_blocking)[1])
         self.motors = (sim.simxGetObjectHandle(self.__clientID, "LeftJoint", sC.simx_opmode_blocking)[1],
                        sim.simxGetObjectHandle(self.__clientID, "RightJoint", sC.simx_opmode_blocking)[1])
         self.visionSensor = sim.simxGetObjectHandle(self.__clientID, "VisionSensor", sC.simx_opmode_blocking)[1]
@@ -51,24 +48,41 @@ class Boundary(object):
         # close the connection to CoppeliaSim
         sim.simxFinish(self.__clientID)
 
-    """
-    prints string (msg) in coppelia command window
-    """
-
     def send_msg(self, msg):
+        """
+        prints string (msg) in coppelia command window
+        """
         sim.simxAddStatusbarMessage(self.__clientID, msg, sC.simx_opmode_oneshot)
 
-    """
-    reads poximity sensor data
-    return: 
-    - lengths to nearest object
-        [LeftSensor, FrontSensor, RightSensor] : List
-            each cell contains distance to nearest object (in meters)
-            OR None value if nothing has been detected
-            
-    """
+    def generate_maze_in_coppelia(self, maze):
+        # TODO : UGLY AS FUHHHH.
+        emptyBuff = bytearray()
+        res, retInts, retFloats, retStrings, retBuffer = sim.simxCallScriptFunction(self.__clientID,
+                                                                                    "",
+                                                                                    sC.sim_scripttype_childscript,
+                                                                                    "render@ResizableFloor_5_25",
+                                                                                    [maze.length, maze.width],
+                                                                                    [],
+                                                                                    maze.reduce(),
+                                                                                    emptyBuff,
+                                                                                    sC.simx_opmode_blocking)
+
+        # if res == sC.simx_return_ok:
+        #     maze.render()
+        #     # print ('Dummy handle: ',retInts[0]) # display the reply from CoppeliaSim (in this case, the handle of the created dummy)
+        # else:
+        #     print("Remote function call failed.")
 
     def get_proxys(self):
+        """
+        reads poximity sensor data
+        return:
+        - lengths to nearest object
+            [LeftSensor, FrontSensor, RightSensor] : List
+                each cell contains distance to nearest object (in meters)
+                OR None value if nothing has been detected
+
+        """
         dists = [0, 0, 0]
         dists[0], temp, temp = sim.simxReadProximitySensor(self.__clientID, self.proxySensors[0],
                                                            sC.simx_opmode_blocking)[2:5]
@@ -89,41 +103,40 @@ class Boundary(object):
                 dists[n] = None
         return dists
 
-    """
-    takes picture with robot's camera (optical / vision sensor)     
-    NOTE: we are using only the top half of the sensor! (this method will crop it)
-    returns:
-    - image
-        [y, x, colors] : numpy array
-            note: colors=[r,g,b]
-    """
-
-    def get_vision(self):
-        # print(sim.simxGetVisionSensorImage(self.__clientID,self.visionSensor,0,sC.simx_opmode_blocking)[1:3])
-        # print(len(sim.simxGetVisionSensorImage(self.__clientID,self.visionSensor,0,sC.simx_opmode_blocking)[1:3]))
-        [width, height], data = sim.simxGetVisionSensorImage(self.__clientID, self.visionSensor, 0,
-                                                             sC.simx_opmode_blocking)[1:3]
-
-        #   Conversion
-        image = np.ndarray((height, width, 3), np.uint8)
-        # for d in range(len(data) // 2):
-        for h in range(height):
-            for w in range(width):
-                for c in range(3):  # color
-                    image[h, w, c] = data[c + (width - w) * (h)]  # this doesnt work yet!
-                    print(h, w, c, '\t', c + (width - w) + width * (h))
-
-            # data[d] = 100
-            # if data[d] > 35: data[d] -= 36
-        print(type[data[0]])
-        print([width, height], data)
-        print()
-        print(image)
-        plt.axis("off")
-        plt.imshow(image)
-        plt.show()
-
-        return 0
+    # def get_vision(self):
+    #     """
+    #     takes picture with robot's camera (optical / vision sensor)
+    #     NOTE: we are using only the top half of the sensor! (this method will crop it)
+    #     returns:
+    #     - image
+    #         [y, x, colors] : numpy array
+    #             note: colors=[r,g,b]
+    #     """
+    #     # print(sim.simxGetVisionSensorImage(self.__clientID,self.visionSensor,0,sC.simx_opmode_blocking)[1:3])
+    #     # print(len(sim.simxGetVisionSensorImage(self.__clientID,self.visionSensor,0,sC.simx_opmode_blocking)[1:3]))
+    #     [width, height], data = sim.simxGetVisionSensorImage(self.__clientID, self.visionSensor, 0,
+    #                                                          sC.simx_opmode_blocking)[1:3]
+    #
+    #     #   Conversion
+    #     # image = np.ndarray((height, width, 3), np.uint8)
+    #     # for d in range(len(data) // 2):
+    #     for h in range(height):
+    #         for w in range(width):
+    #             for c in range(3):  # color
+    #                 image[h, w, c] = data[c + (width - w) * (h)]  # this doesnt work yet!
+    #                 print(h, w, c, '\t', c + (width - w) + width * (h))
+    #
+    #         # data[d] = 100
+    #         # if data[d] > 35: data[d] -= 36
+    #     print(type[data[0]])
+    #     print([width, height], data)
+    #     print()
+    #     print(image)
+    #     # plt.axis("off")
+    #     # plt.imshow(image)
+    #     # plt.show()
+    #
+    #     return 0
 
     def turn_right_on_spot(self, vel, angular_point):
         r_handle = self.__scene_objects["right_motor"]
