@@ -2,6 +2,10 @@ import math
 
 import sim_lib.sim as sim
 import sim_lib.simConst as sC
+import math
+import numpy as np
+import matplotlib.pyplot as plt
+import time
 
 import utils.vec as vec # TODO : Move this dependency to robo.py.
 
@@ -21,7 +25,17 @@ class Boundary(object):
 
         # init robot parts
         self.__scene_objects = self.__get_scene_objects_dict()
+        self.res, self.objs = sim.simxGetObjects(self.__clientID, sC.sim_handle_all, sC.simx_opmode_blocking)
+        self.proxySensors = (sim.simxGetObjectHandle(self.__clientID, "LeftProximitySensor", sC.simx_opmode_blocking)[1],
+                             sim.simxGetObjectHandle(self.__clientID, "FrontProximitySensor", sC.simx_opmode_blocking)[1],
+                             sim.simxGetObjectHandle(self.__clientID, "RightProximitySensor", sC.simx_opmode_blocking)[1])
+        self.motors = (sim.simxGetObjectHandle(self.__clientID, "LeftJoint", sC.simx_opmode_blocking)[1],
+                       sim.simxGetObjectHandle(self.__clientID, "RightJoint", sC.simx_opmode_blocking)[1])
+        self.visionSensor = sim.simxGetObjectHandle(self.__clientID, "VisionSensor", sC.simx_opmode_blocking)[1]
 
+    """
+    ALWAYS RUN LAST
+    """
     def close_sim_connection(self):
         """
         Function to close the sim connection.
@@ -32,28 +46,71 @@ class Boundary(object):
 
         # make sure that the last command sent out had time to arrive
         sim.simxGetPingTime(self.__clientID)
-
         # close the connection to CoppeliaSim
         sim.simxFinish(self.__clientID)
 
-    # TODO : ?.
+    """
+    prints string (msg) in coppelia command window
+    """
     def send_msg(self, msg):
         sim.simxAddStatusbarMessage(self.__clientID, msg, sC.simx_opmode_oneshot)
 
-    # TODO : Fugly.
-    def get_proxy(self):
-        q = [0, 0]
-        q[0], temp, q[1] = sim.simxReadProximitySensor(self.__clientID, self.proxySensors[0],
-                                                       sC.simx_opmode_blocking)[2:5]
-        return q[1]
+    """
+    reads poximity sensor data
+    return: 
+    - lengths to nearest object
+        [LeftSensor, FrontSensor, RightSensor] : List
+            each cell contains distance to nearest object (in meters)
+            OR None value if nothing has been detected
+            
+    """
+    def get_proxys(self):
+        dists = [0,0,0]
+        dists[0], temp, temp = sim.simxReadProximitySensor(self.__clientID, self.proxySensors[0], sC.simx_opmode_blocking)[2:5]
+        dists[1], temp, temp = sim.simxReadProximitySensor(self.__clientID, self.proxySensors[1], sC.simx_opmode_blocking)[2:5]
+        dists[2], temp, temp = sim.simxReadProximitySensor(self.__clientID, self.proxySensors[2], sC.simx_opmode_blocking)[2:5]
+        del temp
+        for n in range(len(dists)):
+            dists[n] = math.sqrt((dists[n][0]) ** 2 + (dists[n][1]) ** 2 + (dists[n][2]) ** 2) # get range from (y,x,z)
+            # if dists[n]<2.5 and dists[n]>=1.5:  dists[n] = 2
+            if dists[n]<1.5 and dists[n]>=0.35:  dists[n] = 1                                  # get how many blocksaway
+            elif dists[n]<0.35 and dists[n]>=0.05: dists[n] = 0
+            # elif dists[n] < 0.05: dists[n] = None
+            else: dists[n] = None
+        return dists
 
-    # TODO : Fugly.
+    """
+    takes picture with robot's camera (optical / vision sensor)     
+    NOTE: we are using only the top half of the sensor! (this method will crop it)
+    returns:
+    - image
+        [y, x, colors] : numpy array
+            note: colors=[r,g,b]
+    """
     def get_vision(self):
-        ret_code, det_state, data = sim.simxReadVisionSensor(self.__clientID, self.visionSensor,
-                                                             sC.simx_opmode_blocking)
-        # print(type(data[0]))
-        # print(data[0])
-        # print(len(data[0]))
+        # print(sim.simxGetVisionSensorImage(self.__clientID,self.visionSensor,0,sC.simx_opmode_blocking)[1:3])
+        # print(len(sim.simxGetVisionSensorImage(self.__clientID,self.visionSensor,0,sC.simx_opmode_blocking)[1:3]))
+        [width,height], data = sim.simxGetVisionSensorImage(self.__clientID,self.visionSensor,0,sC.simx_opmode_blocking)[1:3]
+
+        #   Conversion
+        image = np.ndarray((height,width,3), np.uint8)
+        # for d in range(len(data) // 2):
+        for h in range(height):
+            for w in range(width):
+                for c in range(3): # color
+                    image[h,w,c] = data[c + (width-w) * (h)]   # this doesnt work yet!
+                    print(h,w,c, '\t', c + (width-w) + width * (h))
+
+            # data[d] = 100
+            # if data[d] > 35: data[d] -= 36
+        print(type[data[0]])
+        print([width,height], data)
+        print()
+        print(image)
+        plt.axis("off")
+        plt.imshow(image)
+        plt.show()
+
         return 0
 
     def turn_right_on_spot(self, vel, angular_point):
@@ -216,3 +273,16 @@ class Boundary(object):
         }
 
         return objects_dict
+
+if __name__ == "__main__":
+    b = Boundary(8008)
+    b.send_msg("heyo!")
+    # b.get_vision()
+    while True:
+        l,c,r = b.get_proxys()
+        b.send_msg("left: " + str(l) + "\tcenter:" + str(c) + "\tright:" + str(r))
+        if c == 0:
+            b.send_msg("STOP!!!!!!!!!!!!!!")
+            break
+
+    b.close_sim_connection()
