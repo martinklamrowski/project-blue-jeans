@@ -1,7 +1,9 @@
+import math
+
 import sim_lib.sim as sim
 import sim_lib.simConst as sC
 
-import math
+import utils.vec as vec # TODO : Move this dependency to robo.py.
 
 
 class Boundary(object):
@@ -54,6 +56,52 @@ class Boundary(object):
         # print(len(data[0]))
         return 0
 
+    def turn_right_on_spot(self, vel, angular_point):
+        r_handle = self.__scene_objects["right_motor"]
+        l_handle = self.__scene_objects["left_motor"]
+        b_handle = self.__scene_objects["body"]
+
+        orientated = False
+        euler_angles = sim.simxGetObjectOrientation(self.__clientID, b_handle, -1, sC.simx_opmode_blocking)[1]
+        prev_g = euler_angles[2]
+
+        starting_rotation = vec.euler_g_to_rad(prev_g)
+        rotation = 0
+
+        # start turning
+        self.set_left_motor_velocity(vel)
+        self.set_right_motor_velocity(-vel)
+
+        while not orientated:
+            euler_angles = sim.simxGetObjectOrientation(self.__clientID, b_handle, -1, sC.simx_opmode_blocking)[1]
+            g = euler_angles[2]
+            dg = g - prev_g
+            print(euler_angles)
+
+            if dg >= 0:
+                dg = vec.euler_g_to_rad(dg)
+            else:
+                dg = vec.euler_g_to_rad(dg)
+            rotation += dg
+            prev_g = g
+
+            """
+            absolute rotation angle of the robot ,and mod it with math.pi/2, 
+            keep rotating until the difference meets a small value like math.pi/180!
+            """
+            if math.fabs(rotation) > angular_point - math.fabs(starting_rotation):
+                orientated = True
+
+        # stohp
+        self.set_left_motor_velocity(0)
+        self.set_right_motor_velocity(0)
+
+        # sim.simxSetJointTargetPosition(self.__clientID, r_handle,
+        #                                r_current_position + step_rad, sC.simx_opmode_oneshot)
+        #
+        # sim.simxSetJointTargetPosition(self.__clientID, l_handle,
+        #                                l_current_position - step_rad, sC.simx_opmode_oneshot)
+
     def set_left_motor_velocity(self, vel):
         handle = self.__scene_objects["left_motor"]
         sim.simxSetJointTargetVelocity(self.__clientID, handle, vel, sC.simx_opmode_oneshot)
@@ -71,10 +119,10 @@ class Boundary(object):
         handle = self.__scene_objects["arm_joint_left"]
         step_rad = -step * math.pi / 180
 
-        current_position = self.__get_joint_pos(handle)
+        current_position = self.__get_joint_pos(handle)[1]
 
         sim.simxSetJointTargetPosition(self.__clientID, handle,
-                                       current_position[1] + step_rad, sC.simx_opmode_oneshot)
+                                       current_position + step_rad, sC.simx_opmode_oneshot)
 
     def raise_arm_right_step(self, step):
         """
@@ -85,10 +133,10 @@ class Boundary(object):
         handle = self.__scene_objects["arm_joint_right"]
         step_rad = -step * math.pi / 180
 
-        current_position = self.__get_joint_pos(handle)
+        current_position = self.__get_joint_pos(handle)[1]
 
         sim.simxSetJointTargetPosition(self.__clientID, handle,
-                                       current_position[1] + step_rad, sC.simx_opmode_oneshot)
+                                       current_position + step_rad, sC.simx_opmode_oneshot)
 
     def lower_arm_left_step(self, step):
         """
@@ -99,10 +147,10 @@ class Boundary(object):
         handle = self.__scene_objects["arm_joint_left"]
         step_rad = -step * math.pi / 180
 
-        current_position = self.__get_joint_pos(handle)
+        current_position = self.__get_joint_pos(handle)[1]
 
         sim.simxSetJointTargetPosition(self.__clientID, handle,
-                                       current_position[1] - step_rad, sC.simx_opmode_oneshot)
+                                       current_position - step_rad, sC.simx_opmode_oneshot)
 
     def lower_arm_right_step(self, step):
         """
@@ -113,10 +161,10 @@ class Boundary(object):
         handle = self.__scene_objects["arm_joint_right"]
         step_rad = -step * math.pi / 180
 
-        current_position = self.__get_joint_pos(handle)
+        current_position = self.__get_joint_pos(handle)[1]
 
         sim.simxSetJointTargetPosition(self.__clientID, handle,
-                                       current_position[1] - step_rad, sC.simx_opmode_oneshot)
+                                       current_position - step_rad, sC.simx_opmode_oneshot)
 
     def reset_arm_right_pos(self):
         """
@@ -151,8 +199,8 @@ class Boundary(object):
         objects_dict = {
             "LeftProximitySensor": sim.simxGetObjectHandle(self.__clientID, "LeftProximitySensor",
                                                            sC.simx_opmode_blocking)[1],
-            "FrontProximitySensor": sim.simxGetObjectHandle(self.__clientID, "FrontProximitySensor",
-                                                            sC.simx_opmode_blocking)[1],
+            "distance_proxie": sim.simxGetObjectHandle(self.__clientID, "distance_proxie",
+                                                       sC.simx_opmode_blocking)[1],
             "RightProximitySensor": sim.simxGetObjectHandle(self.__clientID, "RightProximitySensor",
                                                             sC.simx_opmode_blocking)[1],
             "arm_joint_left": sim.simxGetObjectHandle(self.__clientID, "arm_joint_left",
@@ -162,7 +210,9 @@ class Boundary(object):
             "left_motor": sim.simxGetObjectHandle(self.__clientID, "left_motor",
                                                   sC.simx_opmode_blocking)[1],
             "right_motor": sim.simxGetObjectHandle(self.__clientID, "right_motor",
-                                                   sC.simx_opmode_blocking)[1]
+                                                   sC.simx_opmode_blocking)[1],
+            "body": sim.simxGetObjectHandle(self.__clientID, "body",
+                                            sC.simx_opmode_blocking)[1]
         }
 
         return objects_dict

@@ -55,8 +55,17 @@ def main():
                 robo.accelerate_backward(turn="right")
             else:
                 robo.accelerate_backward(turn=None)
+        elif keyboard.is_pressed("e"):
+            robo.turn_right_on_spot(consts.EAST)
+        elif keyboard.is_pressed("q"):
+            robo.turn_right_on_spot(consts.WEST)
+        elif keyboard.is_pressed("c"):
+            robo.turn_right_on_spot(consts.NORTH)
+        elif keyboard.is_pressed("q"):
+            robo.turn_right_on_spot(consts.WEST)
         else:
             robo.decelerate()
+        print("{} X | {} Y".format(robo.get_vel_x(), robo.get_vel_y()))
 
 
     #     robo.move_to_next(fake_maze)
