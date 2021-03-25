@@ -9,8 +9,8 @@ clientID = sim.simxStart('127.0.0.1',19999,True,True,5000,5) # Connect to Coppel
 if clientID != -1:
     print ('Connected to remote API server')
 
-    LENGTH = 30 # Number of blocks to use for length
-    WIDTH = 30 # Number of blocks to use for width
+    LENGTH = 8 # Number of blocks to use for length
+    WIDTH = 8 # Number of blocks to use for width
     OPENING = 'west'
     new_maze = m.Maze(LENGTH, WIDTH, OPENING)
     new_maze.generate_maze() # Generates random maze
