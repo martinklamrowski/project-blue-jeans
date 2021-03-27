@@ -8,8 +8,8 @@ import numpy as np
 
 COPPELIA_STUB = True
 
-HEIGHT = 5
-WIDTH = 5
+HEIGHT = 10
+WIDTH = 10
 
 if not COPPELIA_STUB:
     startY, startX = generateMaze(HEIGHT, WIDTH)
@@ -28,22 +28,22 @@ while True:
     if len(proxyData) == 4:
         break
     moves = path.getnextPos(proxyData)
-
+    print(moves, proxyData, '\t',robo.roboSTUB.currY, robo.roboSTUB.currX)
+    # move:
+    for m in moves:
+        robo.move(m)
+        time.sleep(1)
+    print()
     if COPPELIA_STUB:
         print('ROBO:\t\tPATH:')
         mapRobo = robo.roboSTUB.map.copy()
         mapPath = path.map.copy()
         mapRobo[robo.roboSTUB.currY, robo.roboSTUB.currX] = 4
         mapPath[path.currY, path.currX] = 4
-        print('\t', moves)
+        print('\t', moves, '\t', path.orientation,robo.roboSTUB.orientation)
         for h in range(HEIGHT):
             print(mapRobo[h,:],'\t', mapPath[h, :])
         time.sleep(1)
-    # move:
-    while len(moves) > 0:
-        robo.move(moves.pop())
-        time.sleep(1)
-    print()
 
 
 # TODO: add a 'just check vision sensor option' for when going over known 2 tiles

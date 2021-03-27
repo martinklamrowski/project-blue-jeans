@@ -20,7 +20,7 @@ class Robo:
         return self.__proxySensors()
 
     def move(self, move):
-        if self.STUB: return self.roboSTUB.move(move)
+        if self.STUB: self.roboSTUB.move(move)
 
 
 

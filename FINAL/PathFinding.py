@@ -1,14 +1,17 @@
 import time
 import numpy as np
-
+from skimage.segmentation import flood
 
 class PathFinding:
     # def __init__(self):
     #     print('heyo from Path')
 
+
     def __init__(self, h, w, startY, startX, orientation='E'):
         print('heyo from Path!')
 
+        self.directions = ((-1,0), (1,0), (0,1), (0,-1))
+        # directions: 0=up, 1=down, 2=right, 3=left
         self.map = np.zeros((h,w), np.uint8)
         """
         map legend:
@@ -30,12 +33,21 @@ class PathFinding:
         self.map[self.currY, self.currX] = 3
 
     def getnextPos(self, proxyData):
+
+        # print(proxyData, self.currY, self.currX)
+        # print(self.map)
         self.__updateMap(proxyData)
+        # print(self.map)
 
         # 1st check is at starting node
-        if (self.currY == self.exitY) and (self.currX == self.exitX): # if at start just move 1 forward
-            self.currX += 1                                    # (it just a simple solution to negate all indexing errs)
-            return ['F']
+        if (self.currY == self.exitY) and (self.currX == self.exitX):   # if at start just move 1 forward
+            if self.map[1,2] == 1:
+                self.orientation = 'S'
+                self.currX += 1
+                return ['F', 'R']
+            else:
+                self.currX += 1
+                return ['F']
 
         # 2nd check for num places to move
         opts = []
@@ -45,35 +57,30 @@ class PathFinding:
 
         if len(opts) == 0:
             x=1 # TODO: djikstra's to block before nearest 0 (& rotate to look at 0)
-        if len(opts) > 1:
+
+        elif len(opts) == 1:
+            if self.map[self.currY+self.directions[opts[0]][0],self.currX+self.directions[opts[0]][1]] == 3:
+                self.currY += self.directions[dir][0]
+                self.currX += self.directions[dir][1]
+                return ['F'] + self.__convertToTurn(opts[0])
+            else:
+                return self.__convertToTurn(opts[0])
+
+        elif len(opts) > 1:
             ranks = []
-            options = []
-            for n, o in enumerate(opts): # these will be rank on which area has the most unknowns
-                yy = self.currY
-                xx = self.currX
-                stack = []
-                options.append([])
-                for dir, m in enumerate(self.__getMapOffsets([self.currY,self.currX])): # set curr position to 1(wall) so we dont scan it
-                    if m[yy,xx] != 1:
-                        if dir == 0:
-                            stack.append([yy-1,xx])
-                            options[n].append()
-                        elif dir == 1:
-                            stack.append([yy+1,xx])
-                        elif dir == 2:
-                            stack.append([yy,xx+1])
-                        elif dir == 3:
-                            stack.append([yy,xx-1])
-
-
-        # print(self.__convertToTurn(opts[0]))
-        # print(opts)
-        # time.sleep(10)
-            # return self.__convertToMove(opts[0])    # TODO : if 2/E we should look 1st then move
-
+            for dir in opts:  # these will be rank on which area has the least unknowns
+                ranks.append(self.__rankedFlood(dir))
+            # if len([index for index, element in enumerate(ranks) if min(ranks) == element]) > 1: # if a tie
+            #     if self.orientation == 'E':
+            choice = opts[ranks.index(min(ranks))]
+            if self.map[self.currY+self.directions[choice][0],self.currX+self.directions[choice][1]] == 3:
+                self.currY += self.directions[choice][0]
+                self.currX += self.directions[choice][1]
+                return ['F'] + self.__convertToTurn(choice)
+            else:
+                return self.__convertToTurn(choice)
 
         # TODO: using depth/flood 1st search if there is 2/E (or 3/S that connects to 2/Es) that are surrounded by walls -> then explore & return
-
 
 
     def goToExit(self):
@@ -81,69 +88,194 @@ class PathFinding:
 
 
     def __updateMap(self, proxyData):
-
-        if self.orientation == 'E':
-            offsetY = 1  # therefore left & right proxy sensors are looking up & down
-            offsetX = 0  # since the center proxy is 90 degrees off we can just swap the x&y offsets bellow
-        elif self.orientation == 'W':
-            offsetY = -1
-            offsetX = 0
-        elif self.orientation == 'S':
-            offsetY = 0
-            offsetX = 1
-        elif self.orientation == 'N':
-            offsetY = 0
-            offsetX = -1
-
-        # Left Sensor:
+                                                        # Left Sensor:
         if proxyData[0] == 0:
-            self.map[self.currY + offsetY, self.currX - offsetX] = 1  # if it sees a wall right next to it
+            if self.orientation == 'E':
+                self.map[self.currY - 1, self.currX] = 1
+            elif self.orientation == 'W':
+                self.map[self.currY + 1, self.currX] = 1
+            elif self.orientation == 'S':
+                self.map[self.currY, self.currX + 1] = 1
+            elif self.orientation == 'N':
+                self.map[self.currY, self.currX - 1] = 1
         elif proxyData[0] == 1:
-            self.map[self.currY + offsetY, self.currX - offsetX] = 2  # if it sees a wall 1 block away
-            self.map[self.currY + (offsetY * 2), self.currX - (offsetX * 2)] = 1
+            if self.orientation == 'E':
+                if self.map[self.currY - 1, self.currX] != 3:
+                    self.map[self.currY - 1, self.currX] = 2
+                self.map[self.currY - 2, self.currX] = 1
+            elif self.orientation == 'W':
+                if self.map[self.currY + 1, self.currX] != 3:
+                    self.map[self.currY + 1, self.currX] = 2
+                self.map[self.currY + 2, self.currX] = 1
+            elif self.orientation == 'S':
+                if self.map[self.currY, self.currX + 1] != 3:
+                    self.map[self.currY, self.currX + 1] = 2
+                self.map[self.currY, self.currX + 2] = 1
+            elif self.orientation == 'N':
+                if self.map[self.currY, self.currX - 1] != 3:
+                    self.map[self.currY, self.currX - 1] = 2
+                self.map[self.currY, self.currX - 2] = 1
         elif proxyData[0] == None:
-            self.map[self.currY + offsetY, self.currX - offsetX] = 2  # if is sees noting
-            self.map[self.currY + (offsetY * 2), self.currX - (offsetX * 2)] = 2
-        # Center Sensor: (it has vision so it will fully see the block)
+            if self.orientation == 'E':
+                if self.map[self.currY - 1, self.currX] != 3:
+                    self.map[self.currY - 1, self.currX] = 2
+                if self.map[self.currY - 2, self.currX] != 3:
+                    self.map[self.currY - 2, self.currX] = 2
+            elif self.orientation == 'W':
+                if self.map[self.currY + 1, self.currX] != 3:
+                    self.map[self.currY + 1, self.currX] = 2
+                if self.map[self.currY + 2, self.currX] != 3:
+                    self.map[self.currY + 2, self.currX] = 2
+            elif self.orientation == 'S':
+                if self.map[self.currY, self.currX + 1] != 3:
+                    self.map[self.currY, self.currX + 1] = 2
+                if self.map[self.currY, self.currX + 2] != 3:
+                    self.map[self.currY, self.currX + 2] = 2
+            elif self.orientation == 'N':
+                if self.map[self.currY, self.currX - 1] != 3:
+                    self.map[self.currY, self.currX - 1] = 2
+                if self.map[self.currY, self.currX - 2] != 3:
+                    self.map[self.currY, self.currX - 2] = 2
+
+                                                        # Center Sensor: (it has vision so it will fully see the block)
         if proxyData[1] == 0:
-            self.map[self.currY + offsetX, self.currX + offsetY] = 1  # if it sees a wall right next to it
+            if self.orientation == 'E':
+                self.map[self.currY, self.currX + 1] = 1
+            elif self.orientation == 'W':
+                self.map[self.currY, self.currX - 1] = 1
+            elif self.orientation == 'S':
+                self.map[self.currY + 1, self.currX] = 1
+            elif self.orientation == 'N':
+                self.map[self.currY - 1, self.currX] = 1
         elif proxyData[1] == 1:
-            self.map[self.currY + offsetX, self.currX + offsetY] = 3  # if it sees a wall 1 block away
-            self.map[self.currY + (offsetX * 2), self.currX + (offsetY * 2)] = 1
+            if self.orientation == 'E':
+                self.map[self.currY, self.currX + 1] = 3
+                self.map[self.currY, self.currX + 2] = 1
+            elif self.orientation == 'W':
+                self.map[self.currY, self.currX - 1] = 3
+                self.map[self.currY, self.currX - 2] = 1
+            elif self.orientation == 'S':
+                self.map[self.currY + 1, self.currX] = 3
+                self.map[self.currY + 2, self.currX] = 1
+            elif self.orientation == 'N':
+                self.map[self.currY - 1, self.currX] = 3
+                self.map[self.currY - 2, self.currX] = 1
         elif proxyData[1] == None:
-            self.map[self.currY + offsetX, self.currX - offsetY] = 3  # if is sees noting
-            self.map[self.currY + (offsetX * 2), self.currX - (offsetY * 2)] = 2
-        # Right Sensor:
+            if self.orientation == 'E':
+                self.map[self.currY, self.currX + 1] = 3
+                if self.map[self.currY, self.currX + 2] != 3:
+                    self.map[self.currY, self.currX + 2] = 2
+            elif self.orientation == 'W':
+                self.map[self.currY, self.currX - 1] = 3
+                if self.map[self.currY, self.currX - 2] != 3:
+                    self.map[self.currY, self.currX - 2] = 2
+            elif self.orientation == 'S':
+                self.map[self.currY + 1, self.currX] = 3
+                if self.map[self.currY + 2, self.currX] != 3:
+                    self.map[self.currY + 2, self.currX] = 2
+            elif self.orientation == 'N':
+                self.map[self.currY - 1, self.currX] = 3
+                if self.map[self.currY - 2, self.currX] != 3:
+                    self.map[self.currY - 2, self.currX] = 2
+
+                                                        # Right Sensor:
         if proxyData[2] == 0:
-            self.map[self.currY + offsetY, self.currX + offsetX] = 1  # if it sees a wall right next to it
+            if self.orientation == 'E':
+                self.map[self.currY + 1, self.currX] = 1
+            elif self.orientation == 'W':
+                self.map[self.currY - 1, self.currX] = 1
+            elif self.orientation == 'S':
+                self.map[self.currY, self.currX - 1] = 1
+            elif self.orientation == 'N':
+                self.map[self.currY, self.currX + 1] = 1
         elif proxyData[2] == 1:
-            self.map[self.currY + offsetY, self.currX + offsetX] = 2  # if it sees a wall 1 block away
-            self.map[self.currY + (offsetY * 2), self.currX + (offsetX * 2)] = 1
+            if self.orientation == 'E':
+                if self.map[self.currY + 1, self.currX] != 3:
+                    self.map[self.currY + 1, self.currX] = 2
+                self.map[self.currY + 2, self.currX] = 1
+            elif self.orientation == 'W':
+                if self.map[self.currY - 1, self.currX] != 3:
+                    self.map[self.currY - 1, self.currX] = 2
+                self.map[self.currY - 2, self.currX] = 1
+            elif self.orientation == 'S':
+                if self.map[self.currY, self.currX - 1] != 3:
+                    self.map[self.currY, self.currX - 1] = 2
+                self.map[self.currY, self.currX - 2] = 1
+            elif self.orientation == 'N':
+                if self.map[self.currY, self.currX + 1] != 3:
+                    self.map[self.currY, self.currX + 1] = 2
+                self.map[self.currY, self.currX + 2] = 1
         elif proxyData[2] == None:
-            self.map[self.currY + offsetY, self.currX + offsetX] = 2  # if is sees noting
-            self.map[self.currY + (offsetY * 2), self.currX + (offsetX * 2)] = 2
+            if self.orientation == 'E':
+                if self.map[self.currY + 1, self.currX] != 3:
+                    self.map[self.currY + 1, self.currX] = 2
+                if self.map[self.currY + 2, self.currX] != 3:
+                    self.map[self.currY + 2, self.currX] = 2
+            elif self.orientation == 'W':
+                if self.map[self.currY - 1, self.currX] != 3:
+                    self.map[self.currY - 1, self.currX] = 2
+                if self.map[self.currY - 2, self.currX] != 3:
+                    self.map[self.currY - 2, self.currX] = 2
+            elif self.orientation == 'S':
+                if self.map[self.currY, self.currX - 1] != 3:
+                    self.map[self.currY, self.currX - 1] = 2
+                if self.map[self.currY, self.currX - 2] != 3:
+                    self.map[self.currY, self.currX - 2] = 2
+            elif self.orientation == 'N':
+                if self.map[self.currY, self.currX + 1] != 3:
+                    self.map[self.currY, self.currX + 1] = 2
+                if self.map[self.currY, self.currX + 2] != 3:
+                    self.map[self.currY, self.currX + 2] = 2
 
     def __convertToTurn(self, dir):
-        if   dir == [1,0]: # down
-            if   self.orientation == 'E':   return ['R']
-            elif self.orientation == 'W':   return ['L']
-            elif self.orientation == 'S':   return []
-            elif self.orientation == 'N':   return ['L','L']
-        elif dir == [-1,0]: # up
-            if   self.orientation == 'E':   return ['L']
-            elif self.orientation == 'W':   return ['R']
-            elif self.orientation == 'S':   return ['L','L']
-            elif self.orientation == 'N':   return []
-        elif dir == [0,1]: # right
-            if   self.orientation == 'E':   return ['L','L']
-            elif self.orientation == 'W':   return []
-            elif self.orientation == 'S':   return ['L']
-            elif self.orientation == 'N':   return ['R']
-        elif dir == [0,-1]: # left
-            if   self.orientation == 'E':   return []
-            elif self.orientation == 'W':   return ['L','L']
-            elif self.orientation == 'S':   return ['R']
-            elif self.orientation == 'N':   return ['L']
+        if dir == 0: # up
+            if   self.orientation == 'E':
+                self.orientation = 'N'
+                return ['L']
+            elif self.orientation == 'W':
+                self.orientation = 'N'
+                return ['R']
+            elif self.orientation == 'S':
+                self.orientation = 'N'
+                return ['L','L']
+            elif self.orientation == 'N':
+                return []
+        elif   dir == 1: # down
+            if   self.orientation == 'E':
+                self.orientation = 'S'
+                return ['R']
+            elif self.orientation == 'W':
+                self.orientation = 'S'
+                return ['L']
+            elif self.orientation == 'S':
+                return []
+            elif self.orientation == 'N':
+                self.orientation = 'S'
+                return ['L','L']
+        elif dir == 2: # right
+            if   self.orientation == 'E':
+                return []
+            elif self.orientation == 'W':
+                self.orientation = 'E'
+                return ['L','L']
+            elif self.orientation == 'S':
+                self.orientation = 'E'
+                return ['L']
+            elif self.orientation == 'N':
+                self.orientation = 'E'
+                return ['R']
+        elif dir == 3: # left
+            if   self.orientation == 'E':
+                self.orientation = 'W'
+                return ['L','L']
+            elif self.orientation == 'W':
+                return []
+            elif self.orientation == 'S':
+                self.orientation = 'W'
+                return ['R']
+            elif self.orientation == 'N':
+                self.orientation = 'W'
+                return ['L']
 
     def __getMapOffsets(self, currPos=None):
         map = self.map.copy()
@@ -166,7 +298,24 @@ class PathFinding:
         map_down[-1,:] = 1
         map_right[:,-1] = 1
         map_left[:,0] = 1
-        for dir, m in enumerate((map_up, map_down, map_right, map_left)):
-            print(m)
-            print(dir, currPos)
+        # for dir, m in enumerate((map_up, map_down, map_right, map_left)):
+        #     print(m)
+        #     print(dir, currPos)
         return (map_up, map_down, map_right, map_left)
+
+    def __rankedFlood(self, seedDir):
+        mask = np.zeros((self.h,self.w), np.bool_)
+        mask[self.map!=1] = True # set all walls to background
+        mask[self.currY,self.currX] = False # set curr position to background, so the flood dont initially overlap everytime
+
+        area = flood(mask,(self.currY + self.directions[seedDir][0],self.currX + self.directions[seedDir][1]), connectivity=1) #1=excludes diagonals
+
+        points = np.zeros((self.h,self.w), np.uint8)
+        points[self.map==0] = 1
+        points[self.map==2] = 2
+
+        sum = np.sum(points[area])
+        if sum == 0:
+            return self.h * self.w * 2   # if only 3(seen&fully explored) blocks, this will garuntee it wont go this way
+        else:
+            return sum

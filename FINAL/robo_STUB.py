@@ -33,39 +33,52 @@ class RoboSTUB:
             elif self.orientation == 'W':   self.currX -= 1
             elif self.orientation == 'S':   self.currY += 1
             elif self.orientation == 'N':   self.currY -= 1
+        print('')
 
     def proxySensors(self):
         data = [None,None,None]
 
-        if self.orientation == 'E':
-            offsetY = 1  # therefore left & right proxy sensors are looking up & down
-            offsetX = 0  # since the center proxy is 90 degrees off we can just swap the x&y offsets bellow
-        elif self.orientation == 'W':
-            offsetY = -1
-            offsetX = 0
-        elif self.orientation == 'S':
-            offsetY = 0
-            offsetX = 1
-        elif self.orientation == 'N':
-            offsetY = 0
-            offsetX = -1
-
     # Left Sensor:
-        if self.map[self.currY + offsetY, self.currX - offsetX] == 1:  # if it sees a wall right next to it
-            data[0] = 0
-        elif self.map[self.currY + (offsetY * 2), self.currX - (offsetX * 2)] == 1:    # if it sees a wall 1 block away
-            data[0] = 1
+        if self.orientation == 'E':
+            if   self.map[self.currY - 1, self.currX] == 1: data[0] = 0
+            elif self.map[self.currY - 2, self.currX] == 1: data[0] = 1
+        elif self.orientation == 'W':
+            if   self.map[self.currY + 1, self.currX] == 1: data[0] = 0
+            elif self.map[self.currY + 2, self.currX] == 1: data[0] = 1
+        elif self.orientation == 'S':
+            if   self.map[self.currY, self.currX + 1] == 1: data[0] = 0
+            elif self.map[self.currY, self.currX + 2] == 1: data[0] = 1
+        elif self.orientation == 'N':
+            if   self.map[self.currY, self.currX - 1] == 1: data[0] = 0
+            elif self.map[self.currY, self.currX - 2] == 1: data[0] = 1
+
 
     # Center Sensor: (it has vision so it will fully see the block)
-        if self.map[self.currY + offsetX, self.currX + offsetY] == 1:  # if it sees a wall right next to it
-            data[1] = 0
-        elif self.map[self.currY + (offsetX * 2), self.currX + (offsetY * 2)] == 1:    # if it sees a wall 1 block away
-            data[1] = 1
+        if self.orientation == 'E':
+            if   self.map[self.currY, self.currX + 1] == 1: data[1] = 0
+            elif self.map[self.currY, self.currX + 2] == 1: data[1] = 1
+        elif self.orientation == 'W':
+            if   self.map[self.currY, self.currX - 1] == 1: data[1] = 0
+            elif self.map[self.currY, self.currX - 2] == 1: data[1] = 1
+        elif self.orientation == 'S':
+            if   self.map[self.currY + 1, self.currX] == 1: data[1] = 0
+            elif self.map[self.currY + 2, self.currX] == 1: data[1] = 1
+        elif self.orientation == 'N':
+            if   self.map[self.currY - 1, self.currX] == 1: data[1] = 0
+            elif self.map[self.currY - 2, self.currX] == 1: data[1] = 1
 
     # Right Sensor:
-        if self.map[self.currY + offsetY, self.currX + offsetX] == 1:  # if it sees a wall right next to it
-            data[2] = 0
-        elif self.map[self.currY + (offsetY * 2), self.currX + (offsetX * 2)] == 1:    # if it sees a wall 1 block away
-            data[2] = 1
+        if self.orientation == 'E':
+            if   self.map[self.currY + 1, self.currX] == 1: data[2] = 0
+            elif self.map[self.currY + 2, self.currX] == 1: data[2] = 1
+        elif self.orientation == 'W':
+            if   self.map[self.currY - 1, self.currX] == 1: data[2] = 0
+            elif self.map[self.currY - 2, self.currX] == 1: data[2] = 1
+        elif self.orientation == 'S':
+            if   self.map[self.currY, self.currX - 1] == 1: data[2] = 0
+            elif self.map[self.currY, self.currX - 2] == 1: data[2] = 1
+        elif self.orientation == 'N':
+            if   self.map[self.currY, self.currX + 1] == 1: data[2] = 0
+            elif self.map[self.currY, self.currX + 2] == 1: data[2] = 1
 
         return data
