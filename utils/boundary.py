@@ -31,6 +31,10 @@ class Boundary(object):
                        sim.simxGetObjectHandle(self.__clientID, "RightJoint", sC.simx_opmode_blocking)[1])
         self.visionSensor = sim.simxGetObjectHandle(self.__clientID, "VisionSensor", sC.simx_opmode_blocking)[1]
 
+        for key in self.__scene_objects:
+            print(key, '\t', self.__scene_objects[key])
+
+
     """
     ALWAYS RUN LAST
     """

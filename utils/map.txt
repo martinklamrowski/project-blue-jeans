@@ -18,3 +18,138 @@ w c w c w w w w w c w c w c c w c w c w w w c w w
 w c c c w w c c c c w c w c w w w w w w c c c w w 
 w c w c c c c w w c c c c c w c c c c c c w c c w 
 w w w w w w w w w w w w w w w w w w w w w w w w w 
+w w w w w w w w w w w w w w w w w w w w w w w w w 
+c c w c w w c c w c c c c w c c w c w w c c c c w 
+w c w c w w w c w w w w c c c w w c w w w c w w w 
+w c c c c c w c w w w w w w c c w c c w c c w c w 
+w w w w w c w c w c c c c w w c w w c w w c w c w 
+w c c c c c w c w w w w c w c c c c c w w c c c w 
+w w w w w c c c c w c w c w w w w w c c w w w c w 
+w c c c c c w w c c c c c c c w c c c w w c c c w 
+w w w w w w w w w w w w w w c w w w c c w w c w w 
+w w w w w w c c c c c c c c c c c c c w w w c c w 
+w c c c w c c w c w w w c w w w w w c w w c c w w 
+w w w c w w c w w w w w w w w c w c c c w c w w w 
+w c c c c c c w w c c c w c c c c c w c c c c c w 
+w w w c w c w w w w w c c c w w w w w c w w c w w 
+w c c c w w w c w c w w w c w c c c c c c w c c w 
+w w w w w c c c c c w c c c w w c w w c w w w c w 
+w w w w w w w w w c w w c w w c c w w c w w c c w 
+w c c c c c c c c c c w c w w w c w w c c w w c w 
+w c w O w w c w c w c c c w w c c w w c w w w c w 
+w w w w w w w w w w w w w w w w w w w w w w w w w 
+w w w w w w w w w w w w w w w w w w w w w w w w w 
+c c c c w c c c c c c c w c c c c c c w c c c c w 
+w w w c w w w w w w w c c c w c w w c w c w w w w 
+w c c c c w w w w w w w w c w w w c c c c c c c w 
+w w w w c w c w c w w c c c w w c c w c w c w c w 
+w c c c c c c c c c c c w c w w w w w c w w w w w 
+w w c w w w w w c w w c w w w w w w w c c c c c w 
+w c c w w c c c c c w w w w w w c c c c w w w w w 
+w c w w c c w w c w w c c c c c c w w c c c c c w 
+w c c w w c w w w w c c w w c w c c w w c w w w w 
+w w c c w c w c c c c w w w w w w c w w c c c c w 
+w c c w w w w c w w w w c c c c c c w w w c w w w 
+w w c c w w c c w w w w w w w w w c c w w c w w w 
+w c c w w w c w w c c c c c c c c c w w c c c c w 
+w w c w w c c w c c w c w w c w c w w w c w w c w 
+w c c c w c w w w c w c w c c w c w w O c w w c w 
+w w c w w w w w c c w w w w w w c w w w c w w w w 
+w w w w w w w c c w w w w w c c c w w c c c c c w 
+w c c c c c c c w w c c c c c w c c w w c w c w w 
+w w w w w w w w w w w w w w w w w w w w w w w w w 
+w w w w w w w w w w w w w w w w w w w w w w w w w 
+c c c c c c w c w c w w w c w c c c c c c c c c w 
+w c w w w c c c w c c w w c w c w w w w w w w w w 
+w w w w c c w w w c w w w c w c w w c w w c w c w 
+w w c w w c c c c c c w w c c c c w c c w c w c w 
+w c c w c c w w c w w w c c w w c c c w w c w c w 
+w w c c c w w w w w w w c w w w c w c c c c c c w 
+w w w w c w c w w c w c c c c w w w w w w c w c w 
+w c c c c c c c w c c c w c w w w c c c w w w w w 
+w w w w c w c w w c w w w c c c c c w c c c w w w 
+w w c c c w c c c c w w w w w w w w w c w c c c w 
+w c c w c w c w w c c c w w w w c c w w w w c w w 
+w w w w c w c w w c w c c c c c c w w w w w w w w 
+w w c c c w w w c c w w w w w w w w w c c c w w w 
+w c c w c c c w w c c c c c c c c c w c w w w c w 
+w w c w w c w w w c w w c w w c w c c c c c c c w 
+w w c w c c w w c c c w c c w w w c w w w w c w w 
+w c c w w c w w w w c w w w w w w c c c c w c w w 
+w c w w w O w c c c c c c c c w w c w c w w c c w 
+w w w w w w w w w w w w w w w w w w w w w w w w w 
+w w w w w w w w w w w w w w w w w w w w w w w w w 
+c c w w w c c c w w c c c c c w c c c c w c c c w 
+w c w w c c w c c c c w w w w w c w w w w c w w w 
+w c w c c w w w c w c c c c c c c c c c c c c c w 
+w c c c w w c c c w w c w w c w c w c w w O w c w 
+w c w c c w w w w w c c w w c w w w c c w w w c w 
+w w w c w w c c c c c w w w c c w w w c c c w w w 
+w c c c w w w c w c w w w w w c c w w c w w w w w 
+w w w c w w c c w c c c w w c c w w w c c c w c w 
+w c c c c w w c w c w c c w c w w c c c w c w c w 
+w w w w w w c c w c w w w w c c w c w c w c c c w 
+w c c c c c c w w c c c c w c w w c w c w c w c w 
+w c w c w c w w c c w w c w w w w c w c w c w c w 
+w c w w w c w c c w w c c c c c w c w c w c w c w 
+w c w w w w w w c c w c w c w w w c w w w w w c w 
+w c c c w w w w w c w c w w w w w c c w w c c c w 
+w c w c c w c w w w w c c c c c w c w w w c w c w 
+w c w w c c c c c w w c w w c w w c c w w c w w w 
+w c w w w c w w c w c c c w c w w c w w w c c c w 
+w w w w w w w w w w w w w w w w w w w w w w w w w 
+w w w w w w w w w w w w w w w w w w w w w w w w w 
+c c w c c c c c c c c w w c c c w w c w c c c c w 
+w c c c w c w w c w c w w w w c w w c c c w w w w 
+w w w w w c w w w w c w c w c c w w c w w w w c w 
+w w w c c c w c c c c c c w w c c w c c w c w c w 
+w c w w w c w w w w w c w w w w c c c w w c w c w 
+w c c w w w w w w w c c c c w w w w c w c c c c w 
+w w c c w w c c c w w c w w w w w c c c c w w w w 
+w w w c c w w w c c c c c w w c c c w w c w w w w 
+w c w w c w c w w w w c w w w w w c w w w w c c w 
+w c c w c w c c c c c c c w c w w c w c w w c w w 
+w w c w c c c w w w w c w w c w w c c c c w c c w 
+w c c c c w c w c c c c w w c w w w w c w w c w w 
+w w w w w w w w w w w c w w c w w c c c c c c c w 
+w c c c w w w w c w w c w w c c w w c w c w w w w 
+w w w c w c c c c c c c c w w c w O c w w w w w w 
+w c c c w w w w w w w w c w w c w w c w w w c w w 
+w w w c c c c c c c c c c c c c c c c c c c c c w 
+w c c c w c w c w c w c w c w c w c w c w c w c w 
+w w w w w w w w w w w w w w w w w w w w w w w w w 
+w w w w w 
+c c w O w 
+w c w c w 
+w c c c w 
+w w w w w 
+w w w w w w w w w w 
+c c c w c w c c c w 
+w c w w c c c w w w 
+w c w w c w w w w w 
+w c c w c w w c c w 
+w w c c c c w c w w 
+w O c w w w w c c w 
+w w c c c w w c w w 
+w c c w c c c c c w 
+w w w w w w w w w w 
+w w w w w w w w w w w w w w w w w w w w w w w w w 
+c c w c c c c c c w w c w w c c w w c c c w c w w 
+w c c c w w w w w w c c c w w c c w w w c c c c w 
+w w w c w c w w c w w w c c w w c w c c c w c w w 
+w c c c w c w c c c w w w c c w c w c w w w w w w 
+w w w c c c c c w w w c c c w w c w c w w w w w w 
+w w c c w c w w w w w w w c c c c c c c c w c c w 
+w c c w w c c w c w w c w c w w w c w w w w c w w 
+w c w w w w c c c c c c c c c c w c c c c c c c w 
+w c c c c w c w c w c w w c w c w c w w w c w c w 
+w w c w c w w w w w c c w w w c w w w w w c w c w 
+w c c w w w c c c c c w w w w c c c c c w c w c w 
+w c w w w w c w c w c c c c w c w w w w w w w c w 
+w c c c c w c w w w w c w w w c c c c c c c w c w 
+w c w w c w c c w w O c c c w w c w c w w w w c w 
+w c w w c w c w w w w c w c c w c w c c w w w w w 
+w c w w c w c c c c w w w c w w c w w c c c c w w 
+w c w w c w w w w w w w c c c w c w w w c w c c w 
+w c w w c c c c c c w w c w c w c c w w c w c w w 
+w w w w w w w w w w w w w w w w w w w w w w w w w 

@@ -14,7 +14,7 @@
 【Usage】
 ```bash
 $ python -p <port> cuboid.py
-$ python main.py -p <port>
+$ python Main.py -p <port>
 ```
 current Coppelia Port = 8008
 
