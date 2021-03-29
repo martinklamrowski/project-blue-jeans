@@ -3,10 +3,11 @@ import keyboard
 
 import utils.constants as consts
 import utils.vec as vec
+from utils.navigation import Navigation
 
 
 class Robo(object):
-    def __init__(self, boundary=None, testing=True):
+    def __init__(self, boundary=None, testing=True, manual=False):
         print("Well hello there.")
 
         # if you don't want to use Coppelia
@@ -29,49 +30,94 @@ class Robo(object):
                 __init__(self, boundary) : boundary == None
             """)
         self.boundary = boundary
+        self.MANUAL = manual
 
     def run(self):
-        while True:
+        if not self.MANUAL:
+            nav = Navigation(18,18) # TODO: input (h,w) as variables from maze
+            # Exploring:
+            while True:
+                # collect data:
+                proxyData = self.boundary_get() # TODO:
+                moves = nav.getnextPos(proxyData)
+                # move:
+                for m in moves:
+                    foundPants = self.move(m)
+                    if foundPants:
+                        break
+                if foundPants:
+                    break
 
-            # pull sensor data
-            # update robo state
-            # move to next
-            if keyboard.is_pressed("u"):
-                self.__raise_arm_step(consts.LEFT_ARM)
-            elif keyboard.is_pressed("j"):
-                self.__lower_arm_step(consts.LEFT_ARM)
-            if keyboard.is_pressed("i"):
-                self.__raise_arm_step(consts.RIGHT_ARM)
-            elif keyboard.is_pressed("k"):
-                self.__lower_arm_step(consts.RIGHT_ARM)
+            moves = nav.goToExit()
+            for m in moves:
+                self.move(m)
 
-            if keyboard.is_pressed("w"):
-                if keyboard.is_pressed("a"):
-                    self.__accelerate_forward(turn="left")
-                elif keyboard.is_pressed("d"):
-                    self.__accelerate_forward(turn="right")
+            self.dance()
+            self.boundary.closeConnection()
+
+        else:
+            while True:
+                if keyboard.is_pressed("u"):
+                    self.__raise_arm_step(consts.LEFT_ARM)
+                elif keyboard.is_pressed("j"):
+                    self.__lower_arm_step(consts.LEFT_ARM)
+                if keyboard.is_pressed("i"):
+                    self.__raise_arm_step(consts.RIGHT_ARM)
+                elif keyboard.is_pressed("k"):
+                    self.__lower_arm_step(consts.RIGHT_ARM)
+
+                if keyboard.is_pressed("w"):
+                    if keyboard.is_pressed("a"):
+                        self.__accelerate_forward(turn="left")
+                    elif keyboard.is_pressed("d"):
+                        self.__accelerate_forward(turn="right")
+                    else:
+                        self.__accelerate_forward(turn=None)
+                elif keyboard.is_pressed("s"):
+                    if keyboard.is_pressed("a"):
+                        self.__accelerate_backward(turn="left")
+                    elif keyboard.is_pressed("d"):
+                        self.__accelerate_backward(turn="right")
+                    else:
+                        self.__accelerate_backward(turn=None)
+                elif keyboard.is_pressed("e"):
+                    self.__turn_right_on_spot(consts.EAST)
+                elif keyboard.is_pressed("q"):
+                    self.__turn_right_on_spot(consts.WEST)
+                elif keyboard.is_pressed("c"):
+                    self.__turn_right_on_spot(consts.NORTH)
+                elif keyboard.is_pressed("q"):
+                    self.__turn_right_on_spot(consts.WEST)
                 else:
-                    self.__accelerate_forward(turn=None)
-            elif keyboard.is_pressed("s"):
-                if keyboard.is_pressed("a"):
-                    self.__accelerate_backward(turn="left")
-                elif keyboard.is_pressed("d"):
-                    self.__accelerate_backward(turn="right")
-                else:
-                    self.__accelerate_backward(turn=None)
-            elif keyboard.is_pressed("e"):
-                self.__turn_right_on_spot(consts.EAST)
-            elif keyboard.is_pressed("q"):
-                self.__turn_right_on_spot(consts.WEST)
-            elif keyboard.is_pressed("c"):
-                self.__turn_right_on_spot(consts.NORTH)
-            elif keyboard.is_pressed("q"):
-                self.__turn_right_on_spot(consts.WEST)
-            else:
-                self.__decelerate()
+                    self.__decelerate()
 
-            print("{} X | {} Y".format(self.__get_vel_x(), self.__get_vel_y()))
+                print("{} X | {} Y".format(self.__get_vel_x(), self.__get_vel_y()))
 
+    def move(self, move):
+        if move == 'L':
+            self.__turn_right_on_spot(consts.WEST)
+            self.__turn_right_on_spot(consts.WEST)
+            self.__turn_right_on_spot(consts.WEST)
+            print('left pivot')
+        elif move == 'R':
+            self.__turn_right_on_spot(consts.WEST)
+            print('right pivot')
+        elif move == 'F':
+            self.__accelerate_forward(turn=None)
+            print('move 1 forward')
+        elif move == 'C':
+            if self.boundary.get_vision():
+                self.pickUp()
+                return True
+        return False
+
+    def pickUp(self):
+        if self.STUB: self.roboSTUB.forward() # since vision sensor only detects 1 in front, pickup() will need to move forward to pick up the pants
+        print('woohoo!')
+
+    def dance(self):
+        for AYO_MUTHA_FUCKA in range(int(6.9)):
+            print('DANCINGGGG')
 
     def __move_to_next(self, testing_map=None):
         """

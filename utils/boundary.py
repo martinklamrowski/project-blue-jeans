@@ -105,6 +105,8 @@ class Boundary(object):
                 dists[n] = None
         return dists
 
+    def get_vision(self):
+        return False
     # def get_vision(self):
     #     """
     #     takes picture with robot's camera (optical / vision sensor)
