@@ -31,7 +31,7 @@ class PathFinding:
         self.exitX = startX
         self.h = h
         self.w = w
-        self.visited[self.currY,self.currX] = True
+        # self.visited[self.currY,self.currX] = True
 
         # set what we know so far (i.e. the entrance & all other edge nodes are wall)
         self.map[0,:] = 1; self.map[-1,:] = 1; self.map[:,0] = 1; self.map[:,-1] = 1
@@ -39,99 +39,57 @@ class PathFinding:
 
     def getnextPos(self, proxyData):
 
-        # 0th update map based on new data
+        # 1st update map based on new data
         self.__updateMap(proxyData)
-        # 1st check if pants have been found
-        if len(proxyData) > 3:
-            xxx=1   # TODO: djikstra's
 
         # 2nd wall flower maze exploring algorthm:
         if self.map[self.currY+self.directions[self.dirs[self.orientation]-1][0],
                     self.currX+self.directions[self.dirs[self.orientation]-1][1]] != 1:     # check if left side is open
             self.currY += self.directions[self.dirs[self.orientation]-1][0]
             self.currX += self.directions[self.dirs[self.orientation]-1][1]
+            self.map[self.currY,self.currX] = 3
             self.orientation = self.dirs[self.dirs[self.orientation]-1]
-            return ['L','F']
+            return ['L','C','F']
         elif self.map[self.currY+self.directions[self.dirs[self.orientation]][0],
                     self.currX+self.directions[self.dirs[self.orientation]][1]] != 1:           # check if front is open
             self.currY += self.directions[self.dirs[self.orientation]][0]
             self.currX += self.directions[self.dirs[self.orientation]][1]
-            return ['F']
+            self.map[self.currY,self.currX] = 3
+            return ['C','F']
         elif self.map[self.currY+self.directions[self.dirs[self.orientation+1]][0],
                     self.currX+self.directions[self.dirs[self.orientation+1]][1]] != 1:            # check if turn right
             self.currY += self.directions[self.dirs[self.orientation+1]][0]
             self.currX += self.directions[self.dirs[self.orientation+1]][1]
             self.orientation = self.dirs[self.orientation+1]
-            return ['R','F']
+            self.map[self.currY,self.currX] = 3
+            return ['R','C','F']
         else:                                                                              # if nothing else to a u-turn
             self.currY += self.directions[self.dirs[self.orientation + 2]][0]
             self.currX += self.directions[self.dirs[self.orientation + 2]][1]
             self.orientation = self.dirs[self.orientation + 2]
-            return ['L','L','F']
-
-
-
-        # if self.__checkDirection()[self.currY,self.currX]
-
-        # opts = []
-        # for dir, m in enumerate(self.__getMapOffsets()):    # dir: 0 = up/N, 1 = right/E, 2 = down/S, 3 = left/S
-        #     if m[self.currY,self.currX] != 1:
-        #         opts.append(dir)
-        # xxx=1
-
-
-
-        # 1st check is at starting node
-        # if (self.currY == self.exitY) and (self.currX == self.exitX):   # if at start just move 1 forward
-        #     if self.map[1,2] == 1:
-        #         self.orientation = 'S'
-        #         self.currX += 1
-        #         self.visited[self.currY, self.currX] = True
-        #         return ['F', 'R']
-        #     else:
-        #         self.currX += 1
-        #         self.visited[self.currY, self.currX] = True
-        #         return ['F']
-        #
-        # # 2nd check for num places to move
-        # opts = []
-        # for dir, m in enumerate(self.__getMapOffsets()):    # dir: 0=up, 1=down, 2=right, 3=left
-        #     if m[self.currY,self.currX] != 1:
-        #         opts.append(dir)
-        #
-        # if len(opts) == 0:
-        #     x=1 # TODO: djikstra's to block before nearest 0 (& rotate to look at 0)
-        #
-        # elif len(opts) == 1:
-        #     if self.map[self.currY+self.directions[opts[0]][0],self.currX+self.directions[opts[0]][1]] == 3:
-        #         self.currY += self.directions[dir][0]
-        #         self.currX += self.directions[dir][1]
-        #         self.visited[self.currY, self.currX] = True
-        #         return ['F'] + self.__convertToTurn(opts[0])
-        #     else:
-        #         return self.__convertToTurn(opts[0])
-        #
-        # elif len(opts) > 1:
-        #     ranks = []
-        #     for dir in opts:  # these will be rank on which area has the least unknowns
-        #         ranks.append(self.__rankedFlood(dir))
-        #     # if len([index for index, element in enumerate(ranks) if min(ranks) == element]) > 1: # if a tie
-        #     #     if self.orientation == 'E':
-        #     choice = opts[ranks.index(min(ranks))]
-        #     if self.map[self.currY+self.directions[choice][0],self.currX+self.directions[choice][1]] == 3:
-        #         self.currY += self.directions[choice][0]
-        #         self.currX += self.directions[choice][1]
-        #         self.visited[self.currY, self.currX] = True
-        #         return ['F'] + self.__convertToTurn(choice)
-        #     else:
-        #         return self.__convertToTurn(choice)
-
-        # TODO: using depth/flood 1st search if there is 2/E (or 3/S that connects to 2/Es) that are surrounded by walls -> then explore & return
-
+            self.map[self.currY,self.currX] = 3
+            return ['L','L','C','F']
 
     def goToExit(self):
-        return ['R','L','F','R','L']
-
+        ys = [self.currY]
+        xs = [self.currX]
+        options = np.zeros((self.h,self.w), np.uint8)
+        visited = np.zeros((self.h,self.w), np.bool_)
+        visited[self.currY,self.currX] = True
+        distance = 1
+        while True:
+            while len(ys) > 0:
+                cur = (ys.pop(), xs.pop())
+                for d, m in enumerate(self.__getMapOffsets()):
+                    if (m[cur[0],cur[1]] > 1) and (not visited[cur[0]+self.directions[d][0],cur[1]+self.directions[d][1]]):
+                        options[cur[0]+self.directions[d][0],cur[1]+self.directions[d][1]] = distance
+                        visited[cur[0] + self.directions[d][0], cur[1] + self.directions[d][1]] = True
+                        if (cur[0]+self.directions[d][0] == self.exitY) and (cur[1]+self.directions[d][1] == self.exitX):
+                            return self.__convertToPathEXIT(options)
+            yTemp, xTemp = np.where(options==distance)
+            ys += yTemp.tolist()
+            xs += xTemp.tolist()
+            distance += 1
 
     def __updateMap(self, proxyData):
                                                         # Left Sensor:
@@ -325,7 +283,6 @@ class PathFinding:
 
     def __getMapOffsets(self):
         map = self.map.copy()
-        map[self.visited==True] = 1
         # make extra maps (using same mem location) for more efficient comparisons between neighboring cells
         map_up = np.zeros((self.h + 1, self.w), np.uint8)  # create 4-neighbor connectivity comparision
         map_down = np.zeros((self.h + 1, self.w), np.uint8)
@@ -348,48 +305,19 @@ class PathFinding:
         #     print(dir, currPos)
         return (map_up, map_right, map_down, map_left)
 
-    def __rankedFlood(self, seedDir):
-        mask = np.zeros((self.h,self.w), np.bool_)
-        mask[self.map!=1] = True # set all walls to background
-        mask[self.currY,self.currX] = False # set curr position to background, so the flood dont initially overlap everytime
-
-        area = flood(mask,(self.currY + self.directions[seedDir][0],self.currX + self.directions[seedDir][1]), connectivity=1) #1=excludes diagonals
-
-        points = np.zeros((self.h,self.w), np.uint8)
-        points[self.map==0] = 1
-        points[self.map==2] = 2
-
-        sum = np.sum(points[area])
-        if sum == 0:
-            return self.h * self.w * 2   # if only 3(seen&fully explored) blocks, this will garuntee it wont go this way
-        else:
-            return sum
-
-    def __checkDirection(self):
-        map = self.map.copy()
-        map[self.visited==True] = 1
-
-        # make extra maps (using same mem location) for more efficient comparisons between neighboring cells
-        map_up = np.zeros((self.h + 1, self.w), np.uint8)  # create 4-neighbor connectivity comparision
-        map_down = np.zeros((self.h + 1, self.w), np.uint8)
-        map_right = np.zeros((self.h, self.w + 1), np.uint8)
-        map_left = np.zeros((self.h, self.w + 1), np.uint8)
-        map_up[1:, :] = map              # paste mask onto it, 1 shifted
-        map_down[:-1, :] = map
-        map_right[:, :-1] = map
-        map_left[:, 1:] = map
-        map_up = np.delete(map_up, -1, 0)     # delete the extra row/column
-        map_down = np.delete(map_down, 0, 0)
-        map_right = np.delete(map_right, 0, 1)
-        map_left = np.delete(map_left, -1, 1)
-        map_up[0,:] = 1                       # set new cells (after the shift) to 1(walls) to eliminate false-positives
-        map_down[-1,:] = 1
-        map_right[:,-1] = 1
-        map_left[:,0] = 1
-        # for dir, m in enumerate((map_up, map_down, map_right, map_left)):
-        #     print(m)
-        #     print(dir, currPos)
-        return (map_up, map_right, map_down, map_left)
-
-if __name__ == '__main__':
-    p = PathFinding()
+    def __convertToPathEXIT(self, options):
+        options[options==0] = 255
+        options[self.currY, self.currX] = 0
+        cur = (self.exitY, self.exitX)
+        dirs = []
+        while True:
+            for dir in (0,1,2,3):
+                if options[cur[0],cur[1]]-1 == options[cur[0]+self.directions[dir][0],cur[1]+self.directions[dir][1]]:
+                    cur = (cur[0]+self.directions[dir][0], cur[1]+self.directions[dir][1])
+                    dirs.append(dir)
+                    break
+            if (cur[0] == self.currY) and (cur[1] == self.currX):
+                moves = []
+                while len(dirs) > 0:
+                    moves += self.__convertToTurn(self.dirs[dirs.pop()+2]) + ['F']
+                return moves

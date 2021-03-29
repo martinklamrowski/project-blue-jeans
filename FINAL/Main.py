@@ -23,15 +23,20 @@ path = PathFinding(HEIGHT, WIDTH, startY, startX)
 
 # Exploring:
 while True:
+
     # collect data:
-    proxyData = robo.pullSensors()
-    if len(proxyData) == 4:
-        break
+    proxyData = robo.pullProxy()
     moves = path.getnextPos(proxyData)
-    print('\n',moves, proxyData, '\t',robo.roboSTUB.currY, robo.roboSTUB.currX)
+
     # move:
     for m in moves:
-        robo.move(m)
+        foundPants = robo.move(m)
+        print(moves, m, '\t', path.orientation, robo.roboSTUB.orientation, '\t', foundPants)
+        if foundPants:
+            break
+    if foundPants:
+        break
+
     print()
     if COPPELIA_STUB:
         print('ROBO:\t\tPATH:')
@@ -43,20 +48,12 @@ while True:
         print('\t', moves, '\t', path.orientation,robo.roboSTUB.orientation)
         for h in range(HEIGHT):
             print(mapRobo[h,:],'\t', mapPath[h, :])
-        time.sleep(3)
+        time.sleep(1)
 
 
-# TODO: add a 'just check vision sensor option' for when going over known 2 tiles
-
-
-
-robo.pickUp()
-
-moves = path.goToExit() # should this take proxy data too?
-while len(moves) > 0:
-    os.system('cls')
-    print(moves.pop())
-    time.sleep(1)
+moves = path.goToExit()
+for m in moves:
+    robo.move(m)
 
 robo.dance()
 time.sleep(3)
