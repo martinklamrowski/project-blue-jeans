@@ -32,6 +32,10 @@ class Robo(object):
 
     def run(self):
         while True:
+
+            # pull sensor data
+            # update robo state
+            # move to next
             if keyboard.is_pressed("u"):
                 self.__raise_arm_step(consts.LEFT_ARM)
             elif keyboard.is_pressed("j"):
@@ -65,15 +69,9 @@ class Robo(object):
                 self.__turn_right_on_spot(consts.WEST)
             else:
                 self.__decelerate()
+
             print("{} X | {} Y".format(self.__get_vel_x(), self.__get_vel_y()))
 
-    def print_map(self):
-        """
-        Prints the maze map as the Robo currently knows it.
-
-        :return: None
-        """
-        print(self.maze_map)
 
     def __move_to_next(self, testing_map=None):
         """
@@ -226,7 +224,7 @@ class Robo(object):
         return self.vel_y
 
     def __turn_right_on_spot(self, direction):
-        self.boundary.__turn_right_on_spot(consts.NOMINAL_VELOCITY, consts.ANGULAR_POINTS[direction])
+        self.boundary.turn_right_on_spot(consts.NOMINAL_VELOCITY, consts.ANGULAR_POINTS[direction])
 
     def __accelerate_forward(self, turn):
         if math.fabs(self.vel_y - consts.ACCELERATION) > consts.VELOCITY_THRESHOLD:

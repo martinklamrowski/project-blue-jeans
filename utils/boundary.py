@@ -56,6 +56,8 @@ class Boundary(object):
 
     def generate_maze_in_coppelia(self, maze):
         # TODO : UGLY AS FUHHHH.
+
+
         emptyBuff = bytearray()
         res, retInts, retFloats, retStrings, retBuffer = sim.simxCallScriptFunction(self.__clientID,
                                                                                     "",
