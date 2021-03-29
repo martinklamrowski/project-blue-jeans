@@ -33,7 +33,6 @@ class RoboSTUB:
             elif self.orientation == 'W':   self.currX -= 1
             elif self.orientation == 'S':   self.currY += 1
             elif self.orientation == 'N':   self.currY -= 1
-        print('')
 
     def proxySensors(self):
         data = [None,None,None]

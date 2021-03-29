@@ -28,14 +28,14 @@ while True:
     if len(proxyData) == 4:
         break
     moves = path.getnextPos(proxyData)
-    print(moves, proxyData, '\t',robo.roboSTUB.currY, robo.roboSTUB.currX)
+    print('\n',moves, proxyData, '\t',robo.roboSTUB.currY, robo.roboSTUB.currX)
     # move:
     for m in moves:
         robo.move(m)
-        time.sleep(1)
     print()
     if COPPELIA_STUB:
         print('ROBO:\t\tPATH:')
+        os.system('cls')
         mapRobo = robo.roboSTUB.map.copy()
         mapPath = path.map.copy()
         mapRobo[robo.roboSTUB.currY, robo.roboSTUB.currX] = 4
@@ -43,7 +43,7 @@ while True:
         print('\t', moves, '\t', path.orientation,robo.roboSTUB.orientation)
         for h in range(HEIGHT):
             print(mapRobo[h,:],'\t', mapPath[h, :])
-        time.sleep(1)
+        time.sleep(3)
 
 
 # TODO: add a 'just check vision sensor option' for when going over known 2 tiles
