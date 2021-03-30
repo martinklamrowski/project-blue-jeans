@@ -21,7 +21,9 @@ class Boundary(object):
             """.format(port))
 
         # init robot parts
-        self.__scene_objects = self.__get_scene_objects_dict()
+        self.__scene_objects, self.__proxies = self.__get_scene_objects_dict()
+
+        # TODO : Cleanup.
         self.res, self.objs = sim.simxGetObjects(self.__clientID, sC.sim_handle_all, sC.simx_opmode_blocking)
         self.proxySensors = (
             sim.simxGetObjectHandle(self.__clientID, "LeftProximitySensor", sC.simx_opmode_blocking)[1],
@@ -102,6 +104,7 @@ class Boundary(object):
 
     def get_vision(self):
         return False
+
     # def get_vision(self):
     #     """
     #     takes picture with robot's camera (optical / vision sensor)
@@ -155,13 +158,39 @@ class Boundary(object):
         return sim.simxGetObjectPosition(self.__clientID, handle,
                                          -1, sC.simx_opmode_blocking)[1]
 
+    def get_proxie(self, proxie_name):
+        if proxie_name not in self.__proxies:
+            return None
+
+        handle = self.__proxies[proxie_name]
+
+        #  TODO : FAKE NEWS.
+        """
+        A list that contains:
+        item1 (bool): Whether the function was successfully called on the server side
+        item2 (number): detection state (0 or 1)
+        item3 (number): The distance to the detected point
+        item4 (list): The detected point relative to the sensor frame
+        item5 (number): The detected object handle
+        item6 (list): The normal vector of the detected surface, relative to the sensor frame
+        """
+        reading = sim.simxReadProximitySensor(self.__clientID, handle,
+                                              sC.simx_opmode_blocking)
+
+        print("{} - {}".format(proxie_name, reading[2][2]))
+        if reading[1]:
+            return reading[2][2]
+        else:
+            # return None if the sensor is not detecting
+            return None
+
     def snap_to_angular_point(self, velocity, angular_point):
         object_name = "body"
         oriented = False
 
         # don't turn if we're already snapped to the angular point!
         starting_orientation = vec.euler_g_to_rad(self.get_orientation(object_name)[2])
-        if math.fabs(vec.euler_g_to_rad(starting_orientation) - angular_point) < 0.01:
+        if math.fabs(vec.euler_g_to_rad(starting_orientation) - angular_point) < 0.05:
             return
 
         # start turning
@@ -172,70 +201,151 @@ class Boundary(object):
             euler_angles = self.get_orientation(object_name)
             g = euler_angles[2]
 
-            if math.fabs(vec.euler_g_to_rad(g) - angular_point) < 0.01:
+            if math.fabs(vec.euler_g_to_rad(g) - angular_point) < 0.05:
                 oriented = True
 
         # stoohpe
         self.set_left_motor_velocity(0)
         self.set_right_motor_velocity(0)
 
-    def step_forward(self, velocity, distance, angular_point):
+    def course_correct_factors(self):
+        """
+        Function to determine what factors to scale each wheel velocity
+        by depending on the distance the robo is from each wall. For
+        example: if the robo is < 0.15 away from the right wall, left
+        wheel velocity will be factored down.
+
+        :return: (float, float) -> left and right velocity coefficients.
+        """
+        left_name = "left_proxie"
+        right_name = "right_proxie"
+
+        left_factor = 1
+        right_factor = 1
+
+        left_reading = self.get_proxie(left_name)
+        right_reading = self.get_proxie(right_name)
+
+        # TODO : Add case for when only one sensor is detecting. This will
+        #        make the robot enter and exit intersections straighter.
+        if left_reading is not None:
+            if 0.2 > left_reading > 0.175:
+                right_factor = 0.975
+            elif 0.175 >= left_reading > 0.1:
+                right_factor = 0.925
+            elif left_reading <= 0.1:
+                right_factor = 0.85
+
+        # only set left_factor if right_factor hasn't been modified
+        if right_reading is not None and right_factor > 0.175:
+            if 0.2 > right_reading > 0.175:
+                left_factor = 0.975
+            elif 0.175 >= right_reading > 0.1:
+                left_factor = 0.925
+            elif right_reading <= 0.1:
+                left_factor = 0.85
+
+        return left_factor, right_factor
+
+    def override_step_forward(self):
+        """
+        Function that returns True or False depending on whether
+        there is a wall < 0.15 in front of the robo.
+
+        :return: bool -> is there a wall < 0.15 in front?
+        """
+        proxie_name = "front_proxie"
+
+        distance_reading = self.get_proxie(proxie_name)
+
+        if distance_reading is None:
+            return False
+
+        elif distance_reading < 0.25:
+            return True
+
+        else:
+            return False
+
+    def step_forward(self, velocity, angular_point):
         """
         Handles all of the details for moving forward a specified number
         of steps (blocks).
+
         :param velocity: float -> velocity to move forward at.
-        :param distance: float -> distance to move forward.
         :param angular_point: float -> the heading.
         :return: None
         """
+        object_name = "body"
+
+        # need to know how the coordinates will be updating; True for increase
+        moving_in_x = None
+        moving_in_y = None
+        there = False
+
+        if angular_point == 0 or angular_point == math.pi:
+            # north or south
+            moving_in_y = True if angular_point == 0 else False
+            print("north or south")
+        elif angular_point == 3 * math.pi / 2 or angular_point == math.pi / 2:
+            # east or west
+            moving_in_x = True if angular_point == 3 * math.pi / 2 else False
+            print("east or west")
+
         # GPS baby!
         # but this actually isn't that bad; if need be, presumably
         # the 'getPosition' method could be redone by some big brain
         # who has time and money to implement some SpaceX level gyroscopes
         # and stuff to get the orientation and location of the robot -
         # yay for decoupled code!
-        object_name = "body"
-
-        # need to know how the coordinates will be updating
-        moving_in_x = False
-        moving_in_y = False
-        there = False
-
-        if angular_point == 0 or angular_point == math.pi:
-            # north or south
-            moving_in_y = True
-            print("north or south")
-        elif angular_point == 3 * math.pi/2 or angular_point == math.pi/2:
-            # east or west
-            moving_in_x = True
-            print("east or west")
-
         pos_start = self.get_position(object_name)
-        if moving_in_x:
+        if moving_in_x is not None:
             pos_start = pos_start[0]  # working with x
-        elif moving_in_y:
+        elif moving_in_y is not None:
             pos_start = pos_start[1]  # working with y
 
+        # this is the block we are in
+        current_block = (math.floor(pos_start / 0.5) * 0.5) + 0.2
+
+        # target is 0.5 away in whatever direction
+        target_block = current_block + 0.5 \
+            if moving_in_x or moving_in_y \
+            else current_block - 0.5
+
+        distance = math.fabs(target_block - pos_start)
+
         # start movin'!
-        self.set_left_motor_velocity(-velocity)
-        self.set_right_motor_velocity(-velocity)
+        cc_factors = self.course_correct_factors()
+
+        self.set_left_motor_velocity(-velocity * cc_factors[0])
+        self.set_right_motor_velocity(-velocity * cc_factors[1])
 
         while not there:
+
+            if self.override_step_forward():
+                print("OVERRIDE")
+                break
+
             position = self.get_position(object_name)  # [x, y, z]
             pos_x = position[0]
             pos_y = position[1]
 
-            if moving_in_x:
-                if distance - math.fabs(pos_start - pos_x) < 0.01:
+            if moving_in_x is not None:
+                if distance - math.fabs(pos_start - pos_x) < 0.001:
                     there = True
-            elif moving_in_y:
-                if distance - math.fabs(pos_start - pos_y) < 0.01:
+            elif moving_in_y is not None:
+                if distance - math.fabs(pos_start - pos_y) < 0.001:
                     there = True
+
+            if not there:
+                cc_factors = self.course_correct_factors()
+
+                self.set_left_motor_velocity(-velocity * cc_factors[0])
+                self.set_right_motor_velocity(-velocity * cc_factors[1])
 
         # stopphe!
         self.set_left_motor_velocity(0)
         self.set_right_motor_velocity(0)
-
 
     def set_left_motor_velocity(self, velocity):
         handle = self.__scene_objects["left_motor"]
@@ -303,25 +413,29 @@ class Boundary(object):
         sim.simxSetJointTargetPosition(self.__clientID, handle,
                                        current_position - step_rad, sC.simx_opmode_oneshot)
 
-    def reset_arm_right_pos(self):
+    def set_arm_right_pos(self, position):
         """
-        Sets the target position of the left joint to 0.
+        Sets the target position of the left joint to position.
+        :param position: int -> arm position.
+
         :return: None
         """
         handle = self.__scene_objects["arm_joint_right"]
 
         sim.simxSetJointTargetPosition(self.__clientID, handle,
-                                       0, sC.simx_opmode_oneshot)
+                                       position, sC.simx_opmode_oneshot)
 
-    def reset_arm_left_pos(self):
+    def set_arm_left_pos(self, position):
         """
-        Sets the target position of the left joint to 0.
+        Sets the target position of the left joint to position.
+        :param position: int -> arm position.
+
         :return: None
         """
         handle = self.__scene_objects["arm_joint_left"]
 
         sim.simxSetJointTargetPosition(self.__clientID, handle,
-                                       0, sC.simx_opmode_oneshot)
+                                       position, sC.simx_opmode_oneshot)
 
     def __get_joint_pos(self, handle):
         return sim.simxGetJointPosition(self.__clientID, handle,
@@ -333,12 +447,6 @@ class Boundary(object):
         :return: dict -> Object names mapped to integer handles.
         """
         objects_dict = {
-            "LeftProximitySensor": sim.simxGetObjectHandle(self.__clientID, "LeftProximitySensor",
-                                                           sC.simx_opmode_blocking)[1],
-            "distance_proxie": sim.simxGetObjectHandle(self.__clientID, "distance_proxie",
-                                                       sC.simx_opmode_blocking)[1],
-            "RightProximitySensor": sim.simxGetObjectHandle(self.__clientID, "RightProximitySensor",
-                                                            sC.simx_opmode_blocking)[1],
             "arm_joint_left": sim.simxGetObjectHandle(self.__clientID, "arm_joint_left",
                                                       sC.simx_opmode_blocking)[1],
             "arm_joint_right": sim.simxGetObjectHandle(self.__clientID, "arm_joint_right",
@@ -350,4 +458,13 @@ class Boundary(object):
             "body": sim.simxGetObjectHandle(self.__clientID, "body",
                                             sC.simx_opmode_blocking)[1]
         }
-        return objects_dict
+
+        proxies_dict = {
+            "left_proxie": sim.simxGetObjectHandle(self.__clientID, "left_proxie",
+                                                   sC.simx_opmode_blocking)[1],
+            "front_proxie": sim.simxGetObjectHandle(self.__clientID, "front_proxie",
+                                                    sC.simx_opmode_blocking)[1],
+            "right_proxie": sim.simxGetObjectHandle(self.__clientID, "right_proxie",
+                                                    sC.simx_opmode_blocking)[1]
+        }
+        return objects_dict, proxies_dict

@@ -33,6 +33,10 @@ class Robo(object):
         self.MANUAL = manual
 
     def run(self):
+
+        # get them noodles up!
+        self.__reset_arms()
+
         if not self.MANUAL:
             nav = Navigation(18, 18)  # TODO: input (h,w) as variables from maze
             # Exploring:
@@ -81,13 +85,13 @@ class Robo(object):
                     else:
                         self.__accelerate_backward(turn=None)
                 elif keyboard.is_pressed("1"):
-                    self.__turn_right_on_spot(consts.EAST)
+                    self.__snap_to_cardinal_point(consts.EAST)
                 elif keyboard.is_pressed("2"):
-                    self.__turn_right_on_spot(consts.SOUTH)
+                    self.__snap_to_cardinal_point(consts.SOUTH)
                 elif keyboard.is_pressed("0"):
-                    self.__turn_right_on_spot(consts.NORTH)
+                    self.__snap_to_cardinal_point(consts.NORTH)
                 elif keyboard.is_pressed("3"):
-                    self.__turn_right_on_spot(consts.WEST)
+                    self.__snap_to_cardinal_point(consts.WEST)
                 elif keyboard.is_pressed("t"):
                     self.__print_robo_orientation()
                 elif keyboard.is_pressed("m"):
@@ -99,12 +103,12 @@ class Robo(object):
 
     def move(self, move):
         if move == 'L':
-            self.__turn_right_on_spot(consts.WEST)
-            self.__turn_right_on_spot(consts.WEST)
-            self.__turn_right_on_spot(consts.WEST)
+            self.__snap_to_cardinal_point(consts.WEST)
+            self.__snap_to_cardinal_point(consts.WEST)
+            self.__snap_to_cardinal_point(consts.WEST)
             print('left pivot')
         elif move == 'R':
-            self.__turn_right_on_spot(consts.WEST)
+            self.__snap_to_cardinal_point(consts.WEST)
             print('right pivot')
         elif move == 'F':
             self.__accelerate_forward(turn=None)
@@ -167,8 +171,8 @@ class Robo(object):
     # TODO: Merge these cardinality methods.
     def __get_left_cardinality(self):
         """
-        Returns the cardinal point to the Robo's left. I.e., the true cardinal point
-        of the Robo's West.
+        Returns the cardinal point to the Robo's left. I.e., the true cardinal
+        point of the Robo's West.
 
         :return: int -> representing a cardinal point from constants.py
         """
@@ -181,8 +185,8 @@ class Robo(object):
 
     def __get_right_cardinality(self):
         """
-        Returns the cardinal point to the Robo's right. I.e., the true cardinal point
-        of the Robo's East.
+        Returns the cardinal point to the Robo's right. I.e., the true cardinal
+        point of the Robo's East.
 
         :return: int -> representing a cardinal point from constants.py
         """
@@ -195,8 +199,8 @@ class Robo(object):
 
     def __get_rear_cardinality(self):
         """
-        Returns the cardinal point to the Robo's rear. I.e., the true cardinal point
-        of the Robo's South.
+        Returns the cardinal point to the Robo's rear. I.e., the true cardinal
+        point of the Robo's South.
 
         :return: int -> representing a cardinal point from constants.py
         """
@@ -269,22 +273,48 @@ class Robo(object):
                 Fuck you.
             """)
 
+    def __lower_arms(self):
+        self.boundary.set_arm_left_pos(consts.ARM_POSITION_THRESHOLD[0])
+        self.boundary.set_arm_right_pos(consts.ARM_POSITION_THRESHOLD[0])
+
+    def __reset_arms(self):
+        self.boundary.set_arm_left_pos(consts.ARM_POSITION_THRESHOLD[1])
+        self.boundary.set_arm_right_pos(consts.ARM_POSITION_THRESHOLD[1])
+
     def __get_vel_x(self):
         return self.vel_x
 
     def __get_vel_y(self):
         return self.vel_y
 
-    def __turn_right_on_spot(self, direction):
+    def __snap_to_cardinal_point(self, cardinal_point):
+        """
+        Snap the robo to the specified cardinal point.
+
+        :param cardinal_point: int -> the cardinal point as defined in constants.py.
+        :return: None
+        """
         self.boundary.snap_to_angular_point(consts.TURN_VELOCITY,
-                                            consts.ANGULAR_POINTS[direction])
-        self.orientation = direction
+                                            consts.ANGULAR_POINTS[cardinal_point])
+        self.orientation = cardinal_point
 
     def __step_forward(self, num_steps):
-        self.boundary.step_forward(consts.NOMINAL_VELOCITY, consts.BLOCK_SIZE * num_steps,
+        """
+        Move forward. For use when robo is autonomous.
+
+        :param num_steps: int -> the number of steps (blocks) to move forward.
+        :return: None
+        """
+        self.boundary.step_forward(consts.NOMINAL_VELOCITY,
                                    consts.ANGULAR_POINTS[self.orientation])
 
     def __accelerate_forward(self, turn):
+        """
+        Move forward. For use when controlling the robo.
+
+        :param turn: str -> 'left' or 'right'.
+        :return: None
+        """
         if math.fabs(self.vel_y - consts.ACCELERATION) > consts.VELOCITY_THRESHOLD:
             self.vel_y = -consts.VELOCITY_THRESHOLD
         else:
@@ -309,6 +339,12 @@ class Robo(object):
         self.boundary.set_right_motor_velocity(right_wheel_comp)
 
     def __accelerate_backward(self, turn):
+        """
+        Move backwards. For use when controlling the robo.
+
+        :param turn: str -> 'left' or 'right'.
+        :return: None
+        """
         if self.vel_y + consts.ACCELERATION > consts.VELOCITY_THRESHOLD:
             self.vel_y = consts.VELOCITY_THRESHOLD
         else:
@@ -334,7 +370,9 @@ class Robo(object):
 
     def __decelerate(self):
         """
-        Function to __decelerate the robo in whichever direction it is currently traveling.
+        Function to decelerate the robo in whichever direction it is currently
+        traveling.
+
         :return: None
         """
         # TODO : Using self.vel_y as speed for now.
