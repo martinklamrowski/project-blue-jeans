@@ -34,11 +34,11 @@ class Robo(object):
 
     def run(self):
         if not self.MANUAL:
-            nav = Navigation(18,18) # TODO: input (h,w) as variables from maze
+            nav = Navigation(18, 18)  # TODO: input (h,w) as variables from maze
             # Exploring:
             while True:
                 # collect data:
-                proxyData = self.boundary_get() # TODO:
+                proxyData = self.boundary_get()  # TODO:
                 moves = nav.getnextPos(proxyData)
                 # move:
                 for m in moves:
@@ -80,18 +80,22 @@ class Robo(object):
                         self.__accelerate_backward(turn="right")
                     else:
                         self.__accelerate_backward(turn=None)
-                elif keyboard.is_pressed("e"):
+                elif keyboard.is_pressed("1"):
                     self.__turn_right_on_spot(consts.EAST)
-                elif keyboard.is_pressed("q"):
-                    self.__turn_right_on_spot(consts.WEST)
-                elif keyboard.is_pressed("c"):
+                elif keyboard.is_pressed("2"):
+                    self.__turn_right_on_spot(consts.SOUTH)
+                elif keyboard.is_pressed("0"):
                     self.__turn_right_on_spot(consts.NORTH)
-                elif keyboard.is_pressed("q"):
+                elif keyboard.is_pressed("3"):
                     self.__turn_right_on_spot(consts.WEST)
+                elif keyboard.is_pressed("t"):
+                    self.__print_robo_orientation()
+                elif keyboard.is_pressed("m"):
+                    self.__step_forward(1)
                 else:
                     self.__decelerate()
 
-                print("{} X | {} Y".format(self.__get_vel_x(), self.__get_vel_y()))
+                # print("{} X | {} Y".format(self.__get_vel_x(), self.__get_vel_y()))
 
     def move(self, move):
         if move == 'L':
@@ -112,8 +116,10 @@ class Robo(object):
         return False
 
     def pickUp(self):
-        if self.STUB: self.roboSTUB.forward() # since vision sensor only detects 1 in front, pickup() will need to move forward to pick up the pants
-        print('woohoo!')
+        # since vision sensor only detects 1 in front, pickup() will need to move forward to pick up the pants
+        if self.STUB:
+            self.roboSTUB.forward()
+            print('woohoo!')
 
     def dance(self):
         for AYO_MUTHA_FUCKA in range(int(6.9)):
@@ -136,7 +142,7 @@ class Robo(object):
             if self.mode == consts.EXPLORATION_MODE:
 
                 current_node = testing_map.get_map_node_at_pos(self.pos_j, self.pos_i)
-                self.maze_map.set_map_node(current_node) # TODO
+                self.maze_map.set_map_node(current_node)  # TODO
                 self.__update_adjacent_map_nodes(current_node)
 
                 # is there a wall to the left of the Robo in its current square?
@@ -270,7 +276,13 @@ class Robo(object):
         return self.vel_y
 
     def __turn_right_on_spot(self, direction):
-        self.boundary.turn_right_on_spot(consts.NOMINAL_VELOCITY, consts.ANGULAR_POINTS[direction])
+        self.boundary.snap_to_angular_point(consts.TURN_VELOCITY,
+                                            consts.ANGULAR_POINTS[direction])
+        self.orientation = direction
+
+    def __step_forward(self, num_steps):
+        self.boundary.step_forward(consts.NOMINAL_VELOCITY, consts.BLOCK_SIZE * num_steps,
+                                   consts.ANGULAR_POINTS[self.orientation])
 
     def __accelerate_forward(self, turn):
         if math.fabs(self.vel_y - consts.ACCELERATION) > consts.VELOCITY_THRESHOLD:
@@ -333,3 +345,9 @@ class Robo(object):
                 self.vel_y = self.vel_y + consts.ACCELERATION if self.vel_y < 0 else self.vel_y - consts.ACCELERATION
         self.boundary.set_left_motor_velocity(self.vel_y)
         self.boundary.set_right_motor_velocity(self.vel_y)
+
+    def __print_robo_orientation(self):
+        # TODO : Testing; remove.
+        stuff = self.boundary.get_orientation("body")
+        print(stuff)
+        print(vec.euler_g_to_rad(stuff[2]))

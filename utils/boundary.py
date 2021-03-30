@@ -31,10 +31,6 @@ class Boundary(object):
                        sim.simxGetObjectHandle(self.__clientID, "RightJoint", sC.simx_opmode_blocking)[1])
         self.visionSensor = sim.simxGetObjectHandle(self.__clientID, "VisionSensor", sC.simx_opmode_blocking)[1]
 
-    """
-    ALWAYS RUN LAST
-    """
-
     def close_sim_connection(self):
         """
         Function to close the sim connection.
@@ -56,7 +52,6 @@ class Boundary(object):
 
     def generate_maze_in_coppelia(self, maze):
         # TODO : UGLY AS FUHHHH.
-
 
         emptyBuff = bytearray()
         res, retInts, retFloats, retStrings, retBuffer = sim.simxCallScriptFunction(self.__clientID,
@@ -142,59 +137,115 @@ class Boundary(object):
     #
     #     return 0
 
-    def turn_right_on_spot(self, vel, angular_point):
-        r_handle = self.__scene_objects["right_motor"]
-        l_handle = self.__scene_objects["left_motor"]
-        b_handle = self.__scene_objects["body"]
+    def get_orientation(self, object_name):
+        if object_name not in self.__scene_objects:
+            return None
 
-        orientated = False
-        euler_angles = sim.simxGetObjectOrientation(self.__clientID, b_handle, -1, sC.simx_opmode_blocking)[1]
-        prev_g = euler_angles[2]
+        handle = self.__scene_objects[object_name]
 
-        starting_rotation = vec.euler_g_to_rad(prev_g)
-        rotation = 0
+        return sim.simxGetObjectOrientation(self.__clientID, handle,
+                                            -1, sC.simx_opmode_blocking)[1]
+
+    def get_position(self, object_name):
+        if object_name not in self.__scene_objects:
+            return None
+
+        handle = self.__scene_objects[object_name]
+
+        return sim.simxGetObjectPosition(self.__clientID, handle,
+                                         -1, sC.simx_opmode_blocking)[1]
+
+    def snap_to_angular_point(self, velocity, angular_point):
+        object_name = "body"
+        oriented = False
+
+        # don't turn if we're already snapped to the angular point!
+        starting_orientation = vec.euler_g_to_rad(self.get_orientation(object_name)[2])
+        if math.fabs(vec.euler_g_to_rad(starting_orientation) - angular_point) < 0.01:
+            return
 
         # start turning
-        self.set_left_motor_velocity(vel)
-        self.set_right_motor_velocity(-vel)
+        self.set_left_motor_velocity(velocity)
+        self.set_right_motor_velocity(-velocity)
 
-        while not orientated:
-            euler_angles = sim.simxGetObjectOrientation(self.__clientID, b_handle, -1, sC.simx_opmode_blocking)[1]
+        while not oriented:
+            euler_angles = self.get_orientation(object_name)
             g = euler_angles[2]
-            dg = g - prev_g
-            print(euler_angles)
 
-            if dg >= 0:
-                dg = vec.euler_g_to_rad(dg)
-            else:
-                dg = vec.euler_g_to_rad(dg)
-            rotation += dg
-            prev_g = g
+            if math.fabs(vec.euler_g_to_rad(g) - angular_point) < 0.01:
+                oriented = True
 
-            """
-            absolute rotation angle of the robot ,and mod it with math.pi/2, 
-            keep rotating until the difference meets a small value like math.pi/180!
-            """
-            if math.fabs(rotation) > angular_point - math.fabs(starting_rotation):
-                orientated = True
-
-        # stohp
+        # stoohpe
         self.set_left_motor_velocity(0)
         self.set_right_motor_velocity(0)
 
-        # sim.simxSetJointTargetPosition(self.__clientID, r_handle,
-        #                                r_current_position + step_rad, sC.simx_opmode_oneshot)
-        #
-        # sim.simxSetJointTargetPosition(self.__clientID, l_handle,
-        #                                l_current_position - step_rad, sC.simx_opmode_oneshot)
+    def step_forward(self, velocity, distance, angular_point):
+        """
+        Handles all of the details for moving forward a specified number
+        of steps (blocks).
+        :param velocity: float -> velocity to move forward at.
+        :param distance: float -> distance to move forward.
+        :param angular_point: float -> the heading.
+        :return: None
+        """
+        # GPS baby!
+        # but this actually isn't that bad; if need be, presumably
+        # the 'getPosition' method could be redone by some big brain
+        # who has time and money to implement some SpaceX level gyroscopes
+        # and stuff to get the orientation and location of the robot -
+        # yay for decoupled code!
+        object_name = "body"
 
-    def set_left_motor_velocity(self, vel):
+        # need to know how the coordinates will be updating
+        moving_in_x = False
+        moving_in_y = False
+        there = False
+
+        if angular_point == 0 or angular_point == math.pi:
+            # north or south
+            moving_in_y = True
+            print("north or south")
+        elif angular_point == 3 * math.pi/2 or angular_point == math.pi/2:
+            # east or west
+            moving_in_x = True
+            print("east or west")
+
+        pos_start = self.get_position(object_name)
+        if moving_in_x:
+            pos_start = pos_start[0]  # working with x
+        elif moving_in_y:
+            pos_start = pos_start[1]  # working with y
+
+        # start movin'!
+        self.set_left_motor_velocity(-velocity)
+        self.set_right_motor_velocity(-velocity)
+
+        while not there:
+            position = self.get_position(object_name)  # [x, y, z]
+            pos_x = position[0]
+            pos_y = position[1]
+
+            if moving_in_x:
+                if distance - math.fabs(pos_start - pos_x) < 0.01:
+                    there = True
+            elif moving_in_y:
+                if distance - math.fabs(pos_start - pos_y) < 0.01:
+                    there = True
+
+        # stopphe!
+        self.set_left_motor_velocity(0)
+        self.set_right_motor_velocity(0)
+
+
+    def set_left_motor_velocity(self, velocity):
         handle = self.__scene_objects["left_motor"]
-        sim.simxSetJointTargetVelocity(self.__clientID, handle, vel, sC.simx_opmode_oneshot)
+        sim.simxSetJointTargetVelocity(self.__clientID, handle,
+                                       velocity, sC.simx_opmode_oneshot)
 
-    def set_right_motor_velocity(self, vel):
+    def set_right_motor_velocity(self, velocity):
         handle = self.__scene_objects["right_motor"]
-        sim.simxSetJointTargetVelocity(self.__clientID, handle, vel, sC.simx_opmode_oneshot)
+        sim.simxSetJointTargetVelocity(self.__clientID, handle,
+                                       velocity, sC.simx_opmode_oneshot)
 
     def raise_arm_left_step(self, step):
         """
@@ -273,13 +324,12 @@ class Boundary(object):
                                        0, sC.simx_opmode_oneshot)
 
     def __get_joint_pos(self, handle):
-        return sim.simxGetJointPosition(self.__clientID, handle, sC.simx_opmode_blocking)
+        return sim.simxGetJointPosition(self.__clientID, handle,
+                                        sC.simx_opmode_blocking)
 
     def __get_scene_objects_dict(self):
         """
         Gets scene objects and maps the handle to the name.
-        TODO : Is there a way to make this one call? If there is
-               I can't find it.
         :return: dict -> Object names mapped to integer handles.
         """
         objects_dict = {
@@ -300,19 +350,4 @@ class Boundary(object):
             "body": sim.simxGetObjectHandle(self.__clientID, "body",
                                             sC.simx_opmode_blocking)[1]
         }
-
         return objects_dict
-
-
-if __name__ == "__main__":
-    b = Boundary(8008)
-    b.send_msg("heyo!")
-    # b.get_vision()
-    while True:
-        l, c, r = b.get_proxys()
-        b.send_msg("left: " + str(l) + "\tcenter:" + str(c) + "\tright:" + str(r))
-        if c == 0:
-            b.send_msg("STOP!!!!!!!!!!!!!!")
-            break
-
-    b.close_sim_connection()
