@@ -89,31 +89,46 @@ class Boundary(object):
         [y, x, colors] : numpy array
             note: colors=[r,g,b]
     """
-    def get_vision(self):
-        # print(sim.simxGetVisionSensorImage(self.__clientID,self.visionSensor,0,sC.simx_opmode_blocking)[1:3])
-        # print(len(sim.simxGetVisionSensorImage(self.__clientID,self.visionSensor,0,sC.simx_opmode_blocking)[1:3]))
-        [width,height], data = sim.simxGetVisionSensorImage(self.__clientID,self.visionSensor,0,sC.simx_opmode_blocking)[1:3]
+    def get_vision(self, object_id):
+        reading = sim.simxGetObjectHandle(self.__clientID, object_id, sC.simx_opmode_blocking)
 
-        #   Conversion
-        image = np.ndarray((height,width,3), np.uint8)
-        # for d in range(len(data) // 2):
-        for h in range(height):
-            for w in range(width):
-                for c in range(3): # color
-                    image[h,w,c] = data[c + (width-w) * (h)]   # this doesnt work yet!
-                    print(h,w,c, '\t', c + (width-w) + width * (h))
+        res, resolution, image = sim.simxGetVisionSensorImage(self.__clientID, reading, 0, sC.simx_opmode_streaming)
+        print(type(image))
+        # 'b' = int : byte size = 1
+        image_byte_array = array.array('b', image)
+        # size is 5 by 5 array
+        im = Image.frombuffer("RGB", (5, 5), image_byte_array, "raw", "RGB", 0, 1)
+        im_list = list(im.getdata())
+        print(im_list)
+        print("[INFO] vision function executed")
+        
+        return im_list
+        
+#     def get_vision(self):
+#         # print(sim.simxGetVisionSensorImage(self.__clientID,self.visionSensor,0,sC.simx_opmode_blocking)[1:3])
+#         # print(len(sim.simxGetVisionSensorImage(self.__clientID,self.visionSensor,0,sC.simx_opmode_blocking)[1:3]))
+#         [width,height], data = sim.simxGetVisionSensorImage(self.__clientID,self.visionSensor,0,sC.simx_opmode_blocking)[1:3]
 
-            # data[d] = 100
-            # if data[d] > 35: data[d] -= 36
-        print(type[data[0]])
-        print([width,height], data)
-        print()
-        print(image)
-        plt.axis("off")
-        plt.imshow(image)
-        plt.show()
+#         #   Conversion
+#         image = np.ndarray((height,width,3), np.uint8)
+#         # for d in range(len(data) // 2):
+#         for h in range(height):
+#             for w in range(width):
+#                 for c in range(3): # color
+#                     image[h,w,c] = data[c + (width-w) * (h)]   # this doesnt work yet!
+#                     print(h,w,c, '\t', c + (width-w) + width * (h))
 
-        return 0
+#             # data[d] = 100
+#             # if data[d] > 35: data[d] -= 36
+#         print(type[data[0]])
+#         print([width,height], data)
+#         print()
+#         print(image)
+#         plt.axis("off")
+#         plt.imshow(image)
+#         plt.show()
+
+#         return 0
 
     def set_left_motor_velocity(self, vel):
         handle = self.__scene_objects["left_motor"]
