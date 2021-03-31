@@ -113,7 +113,7 @@ class Maze:
                     break
 
     def generate_maze(self, opening='west'):
-        """Generates a maze using Prim's Random Maze Generation algorithm
+        """Generates a maze using Prim's Random Maze Generation algorithm.
 
         Keyword arguments:
         opening -- Opening to the maze

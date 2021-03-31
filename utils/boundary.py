@@ -1,14 +1,19 @@
+"""
+Class to handle direct communication with CoppeliaSim using the RemoteAPI.
+  - Contains some low-level getters and setters for CoppeliaSim scene object
+    attributes.
+  - Also contains some higher-level functions to perform an entire routine,
+    like step the Robo forward one block.
+"""
 import math
-import time
 
 import sim_lib.sim as sim
 import sim_lib.simConst as sC
 
-import utils.vec as vec  # TODO : Move this dependency to robo.py.
+import utils.vec as vec
 
 
 class Boundary(object):
-
     def __init__(self, port):
         # connect to CoppeliaSim
         sim.simxFinish(-1)  # just in case, close all opened connections
@@ -23,168 +28,16 @@ class Boundary(object):
         # init robot parts
         self.__scene_objects, self.__proxies = self.__get_scene_objects_dict()
 
-        # TODO : Cleanup.
-        self.res, self.objs = sim.simxGetObjects(self.__clientID, sC.sim_handle_all, sC.simx_opmode_blocking)
-        self.proxySensors = (
-            sim.simxGetObjectHandle(self.__clientID, "LeftProximitySensor", sC.simx_opmode_blocking)[1],
-            sim.simxGetObjectHandle(self.__clientID, "FrontProximitySensor", sC.simx_opmode_blocking)[1],
-            sim.simxGetObjectHandle(self.__clientID, "RightProximitySensor", sC.simx_opmode_blocking)[1])
-        self.motors = (sim.simxGetObjectHandle(self.__clientID, "LeftJoint", sC.simx_opmode_blocking)[1],
-                       sim.simxGetObjectHandle(self.__clientID, "RightJoint", sC.simx_opmode_blocking)[1])
-        self.visionSensor = sim.simxGetObjectHandle(self.__clientID, "VisionSensor", sC.simx_opmode_blocking)[1]
-
-    def close_sim_connection(self):
+    def snap_to_angular_point(self, velocity, angular_point):
         """
-        Function to close the sim connection.
+        Function that handles all of the details relating to snapping the Robo's front
+        to the specified angular point.
+
+        :param velocity: float -> velocity to turn at; will actually turn at twice this value.
+        :param angular_point: float -> angular point, probably as defined in constants.py.
         :return: None
         """
-        # send some data to CoppeliaSim in a non-blocking fashion:
-        sim.simxAddStatusbarMessage(self.__clientID, "PEACE OUT CoppeliaSim", sC.simx_opmode_oneshot)
 
-        # make sure that the last command sent out had time to arrive
-        sim.simxGetPingTime(self.__clientID)
-        # close the connection to CoppeliaSim
-        sim.simxFinish(self.__clientID)
-
-    def send_msg(self, msg):
-        """
-        prints string (msg) in coppelia command window
-        """
-        sim.simxAddStatusbarMessage(self.__clientID, msg, sC.simx_opmode_oneshot)
-
-    def generate_maze_in_coppelia(self, maze):
-        # TODO : UGLY AS FUHHHH.
-
-        emptyBuff = bytearray()
-        res, retInts, retFloats, retStrings, retBuffer = sim.simxCallScriptFunction(self.__clientID,
-                                                                                    "",
-                                                                                    sC.sim_scripttype_childscript,
-                                                                                    "render@ResizableFloor_5_25",
-                                                                                    [maze.length, maze.width],
-                                                                                    [],
-                                                                                    maze.reduce(),
-                                                                                    emptyBuff,
-                                                                                    sC.simx_opmode_blocking)
-
-        # if res == sC.simx_return_ok:
-        #     maze.render()
-        #     # print ('Dummy handle: ',retInts[0]) # display the reply from CoppeliaSim (in this case, the handle of the created dummy)
-        # else:
-        #     print("Remote function call failed.")
-
-    def get_proxys(self):
-        """
-        reads poximity sensor data
-        return:
-        - lengths to nearest object
-            [LeftSensor, FrontSensor, RightSensor] : List
-                each cell contains distance to nearest object (in meters)
-                OR None value if nothing has been detected
-
-        """
-        dists = [0, 0, 0]
-        dists[0], temp, temp = sim.simxReadProximitySensor(self.__clientID, self.proxySensors[0],
-                                                           sC.simx_opmode_blocking)[2:5]
-        dists[1], temp, temp = sim.simxReadProximitySensor(self.__clientID, self.proxySensors[1],
-                                                           sC.simx_opmode_blocking)[2:5]
-        dists[2], temp, temp = sim.simxReadProximitySensor(self.__clientID, self.proxySensors[2],
-                                                           sC.simx_opmode_blocking)[2:5]
-        del temp
-        for n in range(len(dists)):
-            dists[n] = math.sqrt((dists[n][0]) ** 2 + (dists[n][1]) ** 2 + (dists[n][2]) ** 2)  # get range from (y,x,z)
-            # if dists[n]<2.5 and dists[n]>=1.5:  dists[n] = 2
-            if dists[n] < 1.5 and dists[n] >= 0.35:
-                dists[n] = 1  # get how many blocksaway
-            elif dists[n] < 0.35 and dists[n] >= 0.05:
-                dists[n] = 0
-            # elif dists[n] < 0.05: dists[n] = None
-            else:
-                dists[n] = None
-        return dists
-
-    def get_vision(self):
-        return False
-
-    # def get_vision(self):
-    #     """
-    #     takes picture with robot's camera (optical / vision sensor)
-    #     NOTE: we are using only the top half of the sensor! (this method will crop it)
-    #     returns:
-    #     - image
-    #         [y, x, colors] : numpy array
-    #             note: colors=[r,g,b]
-    #     """
-    #     # print(sim.simxGetVisionSensorImage(self.__clientID,self.visionSensor,0,sC.simx_opmode_blocking)[1:3])
-    #     # print(len(sim.simxGetVisionSensorImage(self.__clientID,self.visionSensor,0,sC.simx_opmode_blocking)[1:3]))
-    #     [width, height], data = sim.simxGetVisionSensorImage(self.__clientID, self.visionSensor, 0,
-    #                                                          sC.simx_opmode_blocking)[1:3]
-    #
-    #     #   Conversion
-    #     # image = np.ndarray((height, width, 3), np.uint8)
-    #     # for d in range(len(data) // 2):
-    #     for h in range(height):
-    #         for w in range(width):
-    #             for c in range(3):  # color
-    #                 image[h, w, c] = data[c + (width - w) * (h)]  # this doesnt work yet!
-    #                 print(h, w, c, '\t', c + (width - w) + width * (h))
-    #
-    #         # data[d] = 100
-    #         # if data[d] > 35: data[d] -= 36
-    #     print(type[data[0]])
-    #     print([width, height], data)
-    #     print()
-    #     print(image)
-    #     # plt.axis("off")
-    #     # plt.imshow(image)
-    #     # plt.show()
-    #
-    #     return 0
-
-    def get_orientation(self, object_name):
-        if object_name not in self.__scene_objects:
-            return None
-
-        handle = self.__scene_objects[object_name]
-
-        return sim.simxGetObjectOrientation(self.__clientID, handle,
-                                            -1, sC.simx_opmode_blocking)[1]
-
-    def get_position(self, object_name):
-        if object_name not in self.__scene_objects:
-            return None
-
-        handle = self.__scene_objects[object_name]
-
-        return sim.simxGetObjectPosition(self.__clientID, handle,
-                                         -1, sC.simx_opmode_blocking)[1]
-
-    def get_proxie(self, proxie_name):
-        if proxie_name not in self.__proxies:
-            return None
-
-        handle = self.__proxies[proxie_name]
-
-        #  TODO : FAKE NEWS.
-        """
-        A list that contains:
-        item1 (bool): Whether the function was successfully called on the server side
-        item2 (number): detection state (0 or 1)
-        item3 (number): The distance to the detected point
-        item4 (list): The detected point relative to the sensor frame
-        item5 (number): The detected object handle
-        item6 (list): The normal vector of the detected surface, relative to the sensor frame
-        """
-        reading = sim.simxReadProximitySensor(self.__clientID, handle,
-                                              sC.simx_opmode_blocking)
-
-        print("{} - {}".format(proxie_name, reading[2][2]))
-        if reading[1]:
-            return reading[2][2]
-        else:
-            # return None if the sensor is not detecting
-            return None
-
-    def snap_to_angular_point(self, velocity, angular_point):
         object_name = "body"
         oriented = False
 
@@ -207,65 +60,6 @@ class Boundary(object):
         # stoohpe
         self.set_left_motor_velocity(0)
         self.set_right_motor_velocity(0)
-
-    def course_correct_factors(self):
-        """
-        Function to determine what factors to scale each wheel velocity
-        by depending on the distance the robo is from each wall. For
-        example: if the robo is < 0.15 away from the right wall, left
-        wheel velocity will be factored down.
-
-        :return: (float, float) -> left and right velocity coefficients.
-        """
-        left_name = "left_proxie"
-        right_name = "right_proxie"
-
-        left_factor = 1
-        right_factor = 1
-
-        left_reading = self.get_proxie(left_name)
-        right_reading = self.get_proxie(right_name)
-
-        # TODO : Add case for when only one sensor is detecting. This will
-        #        make the robot enter and exit intersections straighter.
-        if left_reading is not None:
-            if 0.2 > left_reading > 0.175:
-                right_factor = 0.975
-            elif 0.175 >= left_reading > 0.1:
-                right_factor = 0.925
-            elif left_reading <= 0.1:
-                right_factor = 0.85
-
-        # only set left_factor if right_factor hasn't been modified
-        if right_reading is not None and right_factor > 0.175:
-            if 0.2 > right_reading > 0.175:
-                left_factor = 0.975
-            elif 0.175 >= right_reading > 0.1:
-                left_factor = 0.925
-            elif right_reading <= 0.1:
-                left_factor = 0.85
-
-        return left_factor, right_factor
-
-    def override_step_forward(self):
-        """
-        Function that returns True or False depending on whether
-        there is a wall < 0.15 in front of the robo.
-
-        :return: bool -> is there a wall < 0.15 in front?
-        """
-        proxie_name = "front_proxie"
-
-        distance_reading = self.get_proxie(proxie_name)
-
-        if distance_reading is None:
-            return False
-
-        elif distance_reading < 0.25:
-            return True
-
-        else:
-            return False
 
     def step_forward(self, velocity, angular_point):
         """
@@ -347,12 +141,185 @@ class Boundary(object):
         self.set_left_motor_velocity(0)
         self.set_right_motor_velocity(0)
 
+    def course_correct_factors(self):
+        """
+        Function to determine what factors to scale each wheel velocity
+        by depending on the distance the robo is from each wall. For
+        example: if the robo is < 0.175 away from the right wall, left
+        wheel velocity will be factored down.
+
+        :return: float, float -> left and right velocity coefficients.
+        """
+        left_name = "left_proxie"
+        right_name = "right_proxie"
+
+        left_factor = 1
+        right_factor = 1
+
+        left_reading = self.get_proxie(left_name)
+        right_reading = self.get_proxie(right_name)
+
+        # TODO : Add case for when only one sensor is detecting. This will
+        #        make the robot enter and exit intersections straighter.
+        if left_reading is not None:
+            if 0.2 > left_reading > 0.175:
+                right_factor = 0.975
+            elif 0.175 >= left_reading > 0.1:
+                right_factor = 0.925
+            elif left_reading <= 0.1:
+                right_factor = 0.85
+
+        # only set left_factor if right_factor hasn't been modified
+        if right_reading is not None and right_factor > 0.175:
+            if 0.2 > right_reading > 0.175:
+                left_factor = 0.975
+            elif 0.175 >= right_reading > 0.1:
+                left_factor = 0.925
+            elif right_reading <= 0.1:
+                left_factor = 0.85
+
+        return left_factor, right_factor
+
+    def override_step_forward(self):
+        """
+        Function that returns True or False depending on whether
+        there is a wall < 0.15 in front of the Robo.
+
+        :return: bool -> is there a wall < 0.15 in front?
+        """
+        proxie_name = "front_proxie"
+
+        distance_reading = self.get_proxie(proxie_name)
+
+        if distance_reading is None:
+            return False
+
+        elif distance_reading < 0.25:
+            return True
+
+        else:
+            return False
+
+    def get_vision(self):
+        # TODO : Uh oh.
+        return False
+
+    # def get_vision(self):
+    #     """
+    #     takes picture with robot's camera (optical / vision sensor)
+    #     NOTE: we are using only the top half of the sensor! (this method will crop it)
+    #     returns:
+    #     - image
+    #         [y, x, colors] : numpy array
+    #             note: colors=[r,g,b]
+    #     """
+    #     # print(sim.simxGetVisionSensorImage(self.__clientID,self.visionSensor,0,sC.simx_opmode_blocking)[1:3])
+    #     # print(len(sim.simxGetVisionSensorImage(self.__clientID,self.visionSensor,0,sC.simx_opmode_blocking)[1:3]))
+    #     [width, height], data = sim.simxGetVisionSensorImage(self.__clientID, self.visionSensor, 0,
+    #                                                          sC.simx_opmode_blocking)[1:3]
+    #
+    #     #   Conversion
+    #     # image = np.ndarray((height, width, 3), np.uint8)
+    #     # for d in range(len(data) // 2):
+    #     for h in range(height):
+    #         for w in range(width):
+    #             for c in range(3):  # color
+    #                 image[h, w, c] = data[c + (width - w) * (h)]  # this doesnt work yet!
+    #                 print(h, w, c, '\t', c + (width - w) + width * (h))
+    #
+    #         # data[d] = 100
+    #         # if data[d] > 35: data[d] -= 36
+    #     print(type[data[0]])
+    #     print([width, height], data)
+    #     print()
+    #     print(image)
+    #     # plt.axis("off")
+    #     # plt.imshow(image)
+    #     # plt.show()
+    #
+    #     return 0
+
+    def get_orientation(self, object_name):
+        """
+        Get the orientation of the specified object.
+
+        :param object_name: str -> the object to get.
+        :return: float -> the euler angle g representing the object's orientation.
+        """
+        if object_name not in self.__scene_objects:
+            return None
+
+        handle = self.__scene_objects[object_name]
+
+        return sim.simxGetObjectOrientation(self.__clientID, handle,
+                                            -1, sC.simx_opmode_blocking)[1]
+
+    def get_position(self, object_name):
+        """
+        Get the position of the specified object.
+
+        :param object_name: str -> the object to get.
+        :return: list() -> absolute [x, y, z] coordinates of the object.
+        """
+        if object_name not in self.__scene_objects:
+            return None
+
+        handle = self.__scene_objects[object_name]
+
+        return sim.simxGetObjectPosition(self.__clientID, handle,
+                                         -1, sC.simx_opmode_blocking)[1]
+
+    def get_proxie(self, proxie_name):
+        """
+        Get the distance reading for the specified proxie name.
+
+        :param proxie_name: str -> the proxie name.
+        :return: float/None -> the distance reading/the proxie is not detecting.
+        """
+
+        if proxie_name not in self.__proxies:
+            return None
+
+        handle = self.__proxies[proxie_name]
+
+        #  TODO : FAKE NEWS.
+        """
+        A list that contains:
+        item1 (bool): Whether the function was successfully called on the server side
+        item2 (number): detection state (0 or 1)
+        item3 (number): The distance to the detected point
+        item4 (list): The detected point relative to the sensor frame
+        item5 (number): The detected object handle
+        item6 (list): The normal vector of the detected surface, relative to the sensor frame
+        """
+        reading = sim.simxReadProximitySensor(self.__clientID, handle,
+                                              sC.simx_opmode_blocking)
+
+        print("{} - {}".format(proxie_name, reading[2][2]))
+        if reading[1]:
+            return reading[2][2]
+        else:
+            # return None if the sensor is not detecting
+            return None
+
     def set_left_motor_velocity(self, velocity):
+        """
+        Set the left motor to the specified velocity.
+
+        :param velocity: float -> velocity to set the motor to.
+        :return: None
+        """
         handle = self.__scene_objects["left_motor"]
         sim.simxSetJointTargetVelocity(self.__clientID, handle,
                                        velocity, sC.simx_opmode_oneshot)
 
     def set_right_motor_velocity(self, velocity):
+        """
+        Set the right motor to the specified velocity.
+
+        :param velocity: float -> velocity to set the motor to.
+        :return: None
+        """
         handle = self.__scene_objects["right_motor"]
         sim.simxSetJointTargetVelocity(self.__clientID, handle,
                                        velocity, sC.simx_opmode_oneshot)
@@ -360,7 +327,8 @@ class Boundary(object):
     def raise_arm_left_step(self, step):
         """
         Sets the target position of the left joint to its current position plus the step.
-        :param step: int -> Distance to move from current position.
+
+        :param step: int -> distance to move from current position.
         :return: None
         """
         handle = self.__scene_objects["arm_joint_left"]
@@ -374,7 +342,8 @@ class Boundary(object):
     def raise_arm_right_step(self, step):
         """
         Sets the target position of the right joint to its current position plus the step.
-        :param step: int -> Distance to move from current position.
+
+        :param step: int -> distance to move from current position.
         :return: None
         """
         handle = self.__scene_objects["arm_joint_right"]
@@ -388,7 +357,8 @@ class Boundary(object):
     def lower_arm_left_step(self, step):
         """
         Sets the target position of the left joint to its current position minus the step.
-        :param step: int -> Distance to move from current position.
+
+        :param step: int -> distance to move from current position.
         :return: None
         """
         handle = self.__scene_objects["arm_joint_left"]
@@ -402,7 +372,8 @@ class Boundary(object):
     def lower_arm_right_step(self, step):
         """
         Sets the target position of the right joint to its current position minus the step.
-        :param step: int -> Distance to move from current position.
+
+        :param step: int -> distance to move from current position.
         :return: None
         """
         handle = self.__scene_objects["arm_joint_right"]
@@ -415,9 +386,9 @@ class Boundary(object):
 
     def set_arm_right_pos(self, position):
         """
-        Sets the target position of the left joint to position.
-        :param position: int -> arm position.
+        Sets the target position of the right joint to position.
 
+        :param position: int -> position to move arm to.
         :return: None
         """
         handle = self.__scene_objects["arm_joint_right"]
@@ -428,8 +399,8 @@ class Boundary(object):
     def set_arm_left_pos(self, position):
         """
         Sets the target position of the left joint to position.
-        :param position: int -> arm position.
 
+        :param position: int -> position to move arm to.
         :return: None
         """
         handle = self.__scene_objects["arm_joint_left"]
@@ -437,14 +408,62 @@ class Boundary(object):
         sim.simxSetJointTargetPosition(self.__clientID, handle,
                                        position, sC.simx_opmode_oneshot)
 
+    def generate_maze_in_coppelia(self, maze):
+        """
+        Calls a child script in CoppeliaSim. This child script places cuboids to
+        create the specified maze.
+
+        :param maze: Maze -> object representing the maze to create.
+        :return: None
+        """
+        _ = sim.simxCallScriptFunction(self.__clientID,
+                                       "",
+                                       sC.sim_scripttype_childscript,
+                                       "render@ResizableFloor_5_25",
+                                       [maze.length, maze.width],
+                                       [maze.length/2, maze.width/2],
+                                       maze.reduce(),
+                                       bytearray(),
+                                       sC.simx_opmode_blocking)
+
+    def close_sim_connection(self):
+        """
+        Function to close the sim connection.
+
+        :return: None
+        """
+        # send some data to CoppeliaSim in a non-blocking fashion:
+        sim.simxAddStatusbarMessage(self.__clientID, "PEACE OUT CoppeliaSim", sC.simx_opmode_oneshot)
+
+        # make sure that the last command sent out had time to arrive
+        sim.simxGetPingTime(self.__clientID)
+        # close the connection to CoppeliaSim
+        sim.simxFinish(self.__clientID)
+
+    def send_msg(self, msg):
+        """
+        Print a message in the CoppeliaSim window.
+
+        :param msg: str -> the message to print.
+        :return: None
+        """
+        sim.simxAddStatusbarMessage(self.__clientID, msg, sC.simx_opmode_oneshot)
+
     def __get_joint_pos(self, handle):
+        """
+        Get the position of the specified joint.
+
+        :param handle: int -> the handle of the wanted joint.
+        :return: float -> the position of the joint in rad.
+        """
         return sim.simxGetJointPosition(self.__clientID, handle,
                                         sC.simx_opmode_blocking)
 
     def __get_scene_objects_dict(self):
         """
         Gets scene objects and maps the handle to the name.
-        :return: dict -> Object names mapped to integer handles.
+
+        :return: dict -> object names mapped to integer handles.
         """
         objects_dict = {
             "arm_joint_left": sim.simxGetObjectHandle(self.__clientID, "arm_joint_left",

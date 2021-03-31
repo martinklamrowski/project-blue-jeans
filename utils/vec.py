@@ -1,3 +1,6 @@
+"""
+Some general maths functions.
+"""
 import math
 
 

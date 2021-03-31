@@ -1,11 +1,9 @@
-import time
 import numpy as np
 
 
 class Navigation:
 
     def __init__(self, h, w, startY=1, startX=0, orientation=1):
-
         self.directions = ((-1, 0), (0, 1), (1, 0), (0, -1))
         self.dirs = (0, 1, 2, 3, 0, 1, 2, 3)  # dir: 0 = up/North, 1 = right/East, 2 = down/South, 3 = left/West
         self.visited = np.zeros((h, w), np.bool_)
