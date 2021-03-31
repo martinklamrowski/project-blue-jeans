@@ -200,9 +200,20 @@ class Boundary(object):
         else:
             return False
 
-    def get_vision(self):
-        # TODO : Uh oh.
-        return False
+    def get_vision(self, object_id):
+      reading = sim.simxGetObjectHandle(self.__clientID, object_id, sC.simx_opmode_blocking)
+
+      res, resolution, image = sim.simxGetVisionSensorImage(self.__clientID, reading, 0, sC.simx_opmode_streaming)
+      print(type(image))
+      # 'b' = int : byte size = 1
+      image_byte_array = array.array('b', image)
+      # size is 5 by 5 array
+      im = Image.frombuffer("RGB", (5, 5), image_byte_array, "raw", "RGB", 0, 1)
+      im_list = list(im.getdata())
+      print(im_list)
+      print("[INFO] vision function executed")
+
+      return im_list
 
     # def get_vision(self):
     #     """
