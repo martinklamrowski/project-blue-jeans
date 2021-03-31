@@ -101,6 +101,9 @@ class Robo(object):
                     self.__print_robo_orientation()
                 elif keyboard.is_pressed("m"):
                     self.__step_forward(1)
+                # for testing purposes for vision sensor
+                elif keyboard.is_pressed("="):
+                    self.boundary.get_vision("ortho")
                 else:
                     self.__decelerate()
 
