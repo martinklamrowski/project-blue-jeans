@@ -201,23 +201,23 @@ class Boundary(object):
             return False
 
     def get_vision(self, object_id):
-      reading = sim.simxGetObjectHandle(self.__clientID, object_id, sC.simx_opmode_blocking)
+        # Get the handle of vision sensor
+        err, vsh = sim.simxGetObjectHandle(self.__clientID, object_id, sC.simx_opmode_oneshot_wait)
 
-      res, resolution, image = sim.simxGetVisionSensorImage(self.__clientID, reading, 0, sC.simx_opmode_streaming)
-      print(type(image))
-      # 'b' = int : byte size = 1
-      image_byte_array = array.array('b', image)
-      # size is 5 by 5 array
-      im = Image.frombuffer("RGB", (3, 3), image_byte_array, "raw", "RGB", 0, 1)
-      im_list = list(im.getdata())
-      print(im_list)
-      expected = [(48, 120, 56), (102, 44, 48), (120, 56, 56), (44, 48, 120), (56, 56, 44), (48, 120, 56), (56, 44, 48), (120, 56, 56), (44, 48, 120)]
-      # RGB array values of jeans image taken from coppeliasim (what the vision sensor should see)
-      # if it matches the image, then return true, if not, false
-      if im_list == expected:
-          return True
-      else:
-          return False
+        # Get the image of vision sensor
+        err, resolution, image = sim.simxGetVisionSensorImage(self.__clientID, vsh, 0, sC.simx_opmode_streaming)
+        time.sleep(0.1)
+        err, res, image = sim.simxGetVisionSensorImage(self.__clientID, vsh, 0, sC.simx_opmode_buffer)
+
+        # Process the image to the format (64,64,3)
+        sensorImage = []
+        sensorImage = np.array(image, dtype=np.uint8)
+        sensorImage.resize([res[0], res[1], 3])
+
+        print(sensorImage)
+        # Use matplotlib.imshow to show the image
+        mpl.imshow(sensorImage, origin='lower')
+        print("vision sensor triggered")
 
     # def get_vision(self):
     #     """
