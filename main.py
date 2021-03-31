@@ -1,129 +1,31 @@
 import argparse
-import time
-import keyboard
 
 from utils.boundary import Boundary
-from utils.maze_map import MazeMap
+from utils.maze import Maze
+from utils.navigation import Navigation
 from pyrobo.robo import Robo
-import utils.constants as consts
 
-ap = argparse.ArgumentParser()
-
+ap = argparse.ArgumentParser(description="Go Robo go!")
 ap.add_argument("-p", "--port", required=True, help="Add a port man.")
+ap.add_argument("-d", "--dim", required=True, type=int, nargs=2,
+                help="Give me the dimensions man <-d L W>.")
 args = vars(ap.parse_args())
 
 
 def main():
-    # this is a test; the robo doesn't know about this maze, it will have a different one internally
-    fake_maze = MazeMap(10, 10, False)
-    print(fake_maze)
-
-    # TODO: I think the Boundary instance should eventually be moved to Robo, could also
-    #       just pass b to Robo() - that's what i'll do for now.
     b = Boundary(int(args["port"]))
+    n = Navigation(h=int(args["dim"][0]), w=int(args["dim"][1]))
 
-    # b.send_msg("heyo!")
+    robo = Robo(boundary=b, nav=n, manual=False)
 
-    # print(b.get_proxy())
+    # generate maze
+    maze = Maze(length=int(args["dim"][0]), width=int(args["dim"][1]), opening="west")
+    maze.generate_maze()
+    maze.generate_object()  # TODO : Figure this out.
+    b.generate_maze_in_coppelia(maze=maze)
 
-    # TODO : Change Boundary-Robo relationship to composition, not aggregation.
-    robo = Robo(boundary=b, testing=False)
-    # robo.print_map()
-
-    # main routine
-    while True:
-        if keyboard.is_pressed("u"):
-            robo.raise_arm_step(consts.LEFT_ARM)
-        elif keyboard.is_pressed("j"):
-            robo.lower_arm_step(consts.LEFT_ARM)
-        if keyboard.is_pressed("i"):
-            robo.raise_arm_step(consts.RIGHT_ARM)
-        elif keyboard.is_pressed("k"):
-            robo.lower_arm_step(consts.RIGHT_ARM)
-
-        if keyboard.is_pressed("w"):
-            if keyboard.is_pressed("a"):
-                robo.accelerate_forward(turn="left")
-            elif keyboard.is_pressed("d"):
-                robo.accelerate_forward(turn="right")
-            else:
-                robo.accelerate_forward(turn=None)
-        elif keyboard.is_pressed("s"):
-            if keyboard.is_pressed("a"):
-                robo.accelerate_backward(turn="left")
-            elif keyboard.is_pressed("d"):
-                robo.accelerate_backward(turn="right")
-            else:
-                robo.accelerate_backward(turn=None)
-        else:
-            robo.decelerate()
-
-
-    #     robo.move_to_next(fake_maze)
-    #     robo.print_map()
-    #     print("Robo's Current Position: {}j, {}i".format(robo.pos_j, robo.pos_i))
-    #     time.sleep(1)
-
-
-    # b.print(get_vision())
-    #b.close_sim_connection()
-
-    #
-    #     time.sleep(2)
-    #
-    #     # # retrieve data in a blocking fashion (i.e. a service call):
-    #     # # res, objs = sim.simxGetObjects(clientID, sim.sim_handle_all, sim.simx_opmode_blocking)
-    #     #
-    #     # # there are no vision sensors i.e. this will fail
-    #     # vision_sensors = (sim.simxGetObjectHandle(clientID, "Vision_sensor1",
-    #     #                                           sim.simx_opmode_blocking)[1],
-    #     #                   sim.simxGetObjectHandle(clientID, "Vision_sensor0",
-    #     #                                           sim.simx_opmode_blocking)[1],
-    #     #                   sim.simxGetObjectHandle(clientID, "Vision_sensor",
-    #     #                                           sim.simx_opmode_blocking)[1])
-    #     #
-    #     # left_joint = sim.simxGetObjectHandle(clientID, "Revolute_joint0",
-    #     #                                      sim.simx_opmode_blocking)[1]
-    #     #
-    #     # right_joint = sim.simxGetObjectHandle(clientID, "Revolute_joint",
-    #     #                                       sim.simx_opmode_blocking)[1]
-    #     #
-    #     # while True:
-    #     #     # left reading
-    #     #     ret_code0, det_state0, data0 = sim.simxReadVisionSensor(clientID, vision_sensors[0],
-    #     #                                                             sim.simx_opmode_blocking)
-    #     #
-    #     #     # right reading
-    #     #     ret_code2, det_state2, data2 = sim.simxReadVisionSensor(clientID, vision_sensors[2],
-    #     #                                                             sim.simx_opmode_blocking)
-    #     #
-    #     #     if ret_code0 != -1 and det_state0 != -1:
-    #     #         print(ret_code0, det_state0, data0)  #
-    #     #         print("{} {}".format(data0[0][10], data0[0][10] < 0.3))
-    #     #
-    #     #         sim.simxSetJointTargetVelocity(clientID,
-    #     #                                        right_joint,
-    #     #                                        0.1 if (data0[0][10] < 0.3) else NOM_LIN_VEL,
-    #     #                                        sim.simx_opmode_oneshot)
-    #     #
-    #     #     if ret_code2 != -1 and det_state2 != -1:
-    #     #         print(ret_code2, det_state2, data2)  #
-    #     #         print("{} {}".format(data2[0][10], data2[0][10] < 0.3))
-    #     #         sim.simxSetJointTargetVelocity(clientID,
-    #     #                                        left_joint,
-    #     #                                        0.1 if (data2[0][10] < 0.3) else NOM_LIN_VEL,
-    #     #                                        sim.simx_opmode_oneshot)
-    #
-    #     # send some data to CoppeliaSim in a non-blocking fashion:
-    #     sim.simxAddStatusbarMessage(clientID, "Hello CoppeliaSim!", sim.simx_opmode_oneshot)
-    #
-    #     # make sure that the last command sent out had time to arrive
-    #     sim.simxGetPingTime(clientID)
-    #
-    #     # close the connection to CoppeliaSim
-    #     sim.simxFinish(clientID)
-    # else:
-    #     print("Failed connecting to remote API server")
+    # go robo go
+    robo.run()
 
 
 if __name__ == "__main__":
