@@ -214,10 +214,21 @@ class Boundary(object):
         sensorImage = np.array(image, dtype=np.uint8)
         sensorImage.resize([res[0], res[1], 3])
 
-        print(sensorImage)
+        # print(sensorImage[2][0])
         # Use matplotlib.imshow to show the image
         mpl.imshow(sensorImage, origin='lower')
-        print("vision sensor triggered")
+
+        # colour of pants
+        expected = np.array([26, 102, 145])
+        # compare the captured image rgb values with the expected
+        compare = sensorImage[2][0] == expected
+        
+        if compare.all():
+            print("Match")
+            return True
+        else:
+            print("NoMatch")
+            return False
 
     # def get_vision(self):
     #     """
