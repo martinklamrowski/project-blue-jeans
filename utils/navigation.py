@@ -140,7 +140,7 @@ class Navigation:
                 if self.map[self.currY, self.currX - 2] != 3:
                     self.map[self.currY, self.currX - 2] = 2
 
-                    # Center Sensor: (it has vision so it will fully see the block)
+        # Center Sensor: (it has vision so it will fully see the block)
         if proxyData[1] == 0:
             if self.orientation == 1:
                 self.map[self.currY, self.currX + 1] = 1

@@ -42,7 +42,8 @@ class Robo(object):
             # Exploring:
             while True:
                 # collect data:
-                proxyData = self.boundary_get()  # TODO:
+                foundPants = False
+                proxyData = self.__get_surroundings()  # TODO:
                 moves = nav.getnextPos(proxyData)
                 # move:
                 for m in moves:
@@ -103,17 +104,18 @@ class Robo(object):
 
     def move(self, move):
         if move == 'L':
-            self.__snap_to_cardinal_point(consts.WEST)
-            self.__snap_to_cardinal_point(consts.WEST)
-            self.__snap_to_cardinal_point(consts.WEST)
+            snap_point = self.__get_left_cardinality()
+            self.__snap_to_cardinal_point(snap_point)
             print('left pivot')
         elif move == 'R':
-            self.__snap_to_cardinal_point(consts.WEST)
+            snap_point = self.__get_right_cardinality()
+            self.__snap_to_cardinal_point(snap_point)
             print('right pivot')
         elif move == 'F':
-            self.__accelerate_forward(turn=None)
+            self.__step_forward(1)
             print('move 1 forward')
         elif move == 'C':
+            pass
             if self.boundary.get_vision():
                 self.pickUp()
                 return True
@@ -129,9 +131,28 @@ class Robo(object):
         for AYO_MUTHA_FUCKA in range(int(6.9)):
             print('DANCINGGGG')
 
+    def __get_surroundings(self):
+        """
+        Function to get surroundings based on proxie readings.
+
+        :return: list() -> containing the detection states of each sensor.
+        """
+        left_reading = self.boundary.get_proxie(proxie_name="left_proxie")
+        front_reading = self.boundary.get_proxie(proxie_name="front_proxie")
+        right_reading = self.boundary.get_proxie(proxie_name="right_proxie")
+
+        surroundings = (
+            0 if left_reading is not None else 1,
+            0 if front_reading is not None else 1,
+            0 if right_reading is not None else 1
+        )
+
+        return surroundings
+
+
     def __move_to_next(self, testing_map=None):
         """
-        This will be the method to compute the next move for the Robo based on its current square.
+        This will be the function to compute the next move for the Robo based on its current square.
         TODO: Need sensor info from Boundary here, will emulate for now. Remove testing_map
               eventually. Need better algorithm too, right now it just follows the left wall.
 
