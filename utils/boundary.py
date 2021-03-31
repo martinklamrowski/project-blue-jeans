@@ -208,13 +208,13 @@ class Boundary(object):
       # 'b' = int : byte size = 1
       image_byte_array = array.array('b', image)
       # size is 5 by 5 array
-      im = Image.frombuffer("RGB", (5, 5), image_byte_array, "raw", "RGB", 0, 1)
+      im = Image.frombuffer("RGB", (3, 3), image_byte_array, "raw", "RGB", 0, 1)
       im_list = list(im.getdata())
       print(im_list)
-      
+      expected = [(48, 120, 56), (102, 44, 48), (120, 56, 56), (44, 48, 120), (56, 56, 44), (48, 120, 56), (56, 44, 48), (120, 56, 56), (44, 48, 120)]
       # RGB array values of jeans image taken from coppeliasim (what the vision sensor should see)
       # if it matches the image, then return true, if not, false
-      if im_list == [(48, 120, 56), (102, 44, 48), (120, 56, 56), (44, 48, 120)]:
+      if im_list == expected:
           return True
       else:
           return False
