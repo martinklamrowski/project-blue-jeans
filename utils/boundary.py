@@ -213,7 +213,7 @@ class Boundary(object):
       print(im_list)
       print("[INFO] vision function executed")
 
-      return im_list
+      return True
 
     # def get_vision(self):
     #     """
