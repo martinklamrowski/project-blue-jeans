@@ -1,5 +1,5 @@
 import sys
-
+from colorama import init, Fore, ansi
 import numpy as np
 np.set_printoptions(threshold=sys.maxsize)
 
@@ -42,7 +42,22 @@ class Navigation:
         """
         mapShow = self.map.copy()
         mapShow[self.currY,self.currX] = 4
-        print(mapShow)
+
+        for col in range(self.h):
+            for row in range(self.w):
+                if (mapShow[col,row] == 1):
+                    print(Fore.WHITE, f'{mapShow[col,row]}' + ' ', end='')
+                elif (mapShow[col,row] == 3):
+                    print(Fore.RED, f'{mapShow[col,row]}' + ' ', end='')
+                elif (mapShow[col,row] == 2):
+                    print(Fore.YELLOW, f'{mapShow[col,row]}' + ' ', end='')
+                elif (mapShow[col,row] == 0):
+                    print(Fore.BLACK, f'{mapShow[col,row]}' + ' ', end='')
+                elif (mapShow[col,row] == 4):
+                    print(Fore.GREEN, f'{mapShow[col,row]}' + ' ', end='')
+            print()
+        print(ansi.Style.RESET_ALL)
+        # print(mapShow)
 
     def getnextPos(self, proxyData):
 
