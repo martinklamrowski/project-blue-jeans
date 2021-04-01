@@ -8,15 +8,16 @@ class Navigation:
 
     def __init__(self, h, w, startY=1, startX=0, orientation=1):
         self.directions = ((-1, 0), (0, 1), (1, 0), (0, -1))
-        self.dirs = (0, 1, 2, 3, 0, 1, 2, 3)  # dir: 0 = up/North, 1 = right/East, 2 = down/South, 3 = left/West
+        self.dirs = (0, 1, 2, 3, 0, 1, 2, 3)
+        # dir: 0 = up/North, 1 = right/East, 2 = down/South, 3 = left/West
         self.visited = np.zeros((h, w), np.bool_)
         self.map = np.zeros((h, w), np.uint8)
         """
         map legend:
-        0 = U  = unexplored
-        1 = W  = wall
-        2 = E  = explored but not seen (by vision sensor)
-        3 = S  = seen & explored
+        0 = unexplored
+        1 = wall
+        2 = explored but not seen (by vision sensor)
+        3 = seen & explored
         """
         self.currY = 1  # startY
         self.currX = 0  # startX
@@ -25,7 +26,6 @@ class Navigation:
         self.exitX = 0  # startX
         self.h = h
         self.w = w
-        # self.visited[self.currY,self.currX] = True
 
         # set what we know so far (i.e. the entrance & all other edge nodes are wall)
         self.map[0, :] = 1
@@ -57,9 +57,19 @@ class Navigation:
                     print(Fore.GREEN, f'{mapShow[col,row]}' + ' ', end='')
             print()
         print(ansi.Style.RESET_ALL)
-        # print(mapShow)
 
     def getnextPos(self, proxyData):
+        """
+        pases proxyData to update map then
+        uses wallflower algorithm to determine next set of moves
+
+        :param:     proxyData = data from surrounding blocks (defined in greater detail on line 141 for __updateMap() )
+        :return:    moves = list of next moves for robot
+                                R = pivot right
+                                L = pivot left
+                                F = move forward
+                                C = capture vision sensor & check for pants
+        """
 
         # 1st update map based on new data
         self.__updateMap(proxyData)
@@ -94,6 +104,14 @@ class Navigation:
             return ['L', 'L', 'C', 'F']
 
     def goToExit(self):
+        """
+        uses depth first search to find shortest route to exit
+
+        :return:    moves = list of next moves for robot
+                                R = pivot right
+                                L = pivot left
+                                F = move forward
+        """
         ys = [self.currY]
         xs = [self.currX]
         options = np.zeros((self.h, self.w), np.uint8)
@@ -117,6 +135,18 @@ class Navigation:
             distance += 1
 
     def __updateMap(self, proxyData):
+        """
+        updates map based on proxy sensors
+
+        :param:     proxyData = data from surrounding blocks [Left, Center, Right]
+                                0 = wall right next to robot
+                                None = no wall next to robot
+        :return:    moves = list of next moves for robot
+                                R = pivot right
+                                L = pivot left
+                                F = move forward
+                                C = capture vision sensor & check for pants
+        """
         # Left Sensor:
         if proxyData[0] == 0:
             if self.orientation == 1:
@@ -127,44 +157,19 @@ class Navigation:
                 self.map[self.currY, self.currX + 1] = 1
             elif self.orientation == 0:
                 self.map[self.currY, self.currX - 1] = 1
-        elif proxyData[0] == 1:
-            if self.orientation == 1:
-                if self.map[self.currY - 1, self.currX] != 3:
-                    self.map[self.currY - 1, self.currX] = 2
-                # self.map[self.currY - 2, self.currX] = 1
-            elif self.orientation == 3:
-                if self.map[self.currY + 1, self.currX] != 3:
-                    self.map[self.currY + 1, self.currX] = 2
-                # self.map[self.currY + 2, self.currX] = 1
-            elif self.orientation == 2:
-                if self.map[self.currY, self.currX + 1] != 3:
-                    self.map[self.currY, self.currX + 1] = 2
-                # self.map[self.currY, self.currX + 2] = 1
-            elif self.orientation == 0:
-                if self.map[self.currY, self.currX - 1] != 3:
-                    self.map[self.currY, self.currX - 1] = 2
-                # self.map[self.currY, self.currX - 2] = 1
         elif proxyData[0] == None:
             if self.orientation == 1:
                 if self.map[self.currY - 1, self.currX] != 3:
                     self.map[self.currY - 1, self.currX] = 2
-                # if self.map[self.currY - 2, self.currX] != 3:
-                #     self.map[self.currY - 2, self.currX] = 2
             elif self.orientation == 3:
                 if self.map[self.currY + 1, self.currX] != 3:
                     self.map[self.currY + 1, self.currX] = 2
-                # if self.map[self.currY + 2, self.currX] != 3:
-                #     self.map[self.currY + 2, self.currX] = 2
             elif self.orientation == 2:
                 if self.map[self.currY, self.currX + 1] != 3:
                     self.map[self.currY, self.currX + 1] = 2
-                # if self.map[self.currY, self.currX + 2] != 3:
-                #     self.map[self.currY, self.currX + 2] = 2
             elif self.orientation == 0:
                 if self.map[self.currY, self.currX - 1] != 3:
                     self.map[self.currY, self.currX - 1] = 2
-                # if self.map[self.currY, self.currX - 2] != 3:
-                #     self.map[self.currY, self.currX - 2] = 2
 
         # Center Sensor: (it has vision so it will fully see the block)
         if proxyData[1] == 0:
@@ -176,38 +181,17 @@ class Navigation:
                 self.map[self.currY + 1, self.currX] = 1
             elif self.orientation == 0:
                 self.map[self.currY - 1, self.currX] = 1
-        elif proxyData[1] == 1:
-            if self.orientation == 1:
-                self.map[self.currY, self.currX + 1] = 3
-                # self.map[self.currY, self.currX + 2] = 1
-            elif self.orientation == 3:
-                self.map[self.currY, self.currX - 1] = 3
-                # self.map[self.currY, self.currX - 2] = 1
-            elif self.orientation == 2:
-                self.map[self.currY + 1, self.currX] = 3
-                # self.map[self.currY + 2, self.currX] = 1
-            elif self.orientation == 0:
-                self.map[self.currY - 1, self.currX] = 3
-                # self.map[self.currY - 2, self.currX] = 1
         elif proxyData[1] == None:
             if self.orientation == 1:
                 self.map[self.currY, self.currX + 1] = 3
-                # if self.map[self.currY, self.currX + 2] != 3:
-                #     self.map[self.currY, self.currX + 2] = 2
             elif self.orientation == 3:
                 self.map[self.currY, self.currX - 1] = 3
-                # if self.map[self.currY, self.currX - 2] != 3:
-                #     self.map[self.currY, self.currX - 2] = 2
             elif self.orientation == 2:
                 self.map[self.currY + 1, self.currX] = 3
-                # if self.map[self.currY + 2, self.currX] != 3:
-                #     self.map[self.currY + 2, self.currX] = 2
             elif self.orientation == 0:
                 self.map[self.currY - 1, self.currX] = 3
-                # if self.map[self.currY - 2, self.currX] != 3:
-                #     self.map[self.currY - 2, self.currX] = 2
 
-                    # Right Sensor:
+        # Right Sensor:
         if proxyData[2] == 0:
             if self.orientation == 1:
                 self.map[self.currY + 1, self.currX] = 1
@@ -217,47 +201,36 @@ class Navigation:
                 self.map[self.currY, self.currX - 1] = 1
             elif self.orientation == 0:
                 self.map[self.currY, self.currX + 1] = 1
-        elif proxyData[2] == 1:
-            if self.orientation == 1:
-                if self.map[self.currY + 1, self.currX] != 3:
-                    self.map[self.currY + 1, self.currX] = 2
-                # self.map[self.currY + 2, self.currX] = 1
-            elif self.orientation == 3:
-                if self.map[self.currY - 1, self.currX] != 3:
-                    self.map[self.currY - 1, self.currX] = 2
-                # self.map[self.currY - 2, self.currX] = 1
-            elif self.orientation == 2:
-                if self.map[self.currY, self.currX - 1] != 3:
-                    self.map[self.currY, self.currX - 1] = 2
-                # self.map[self.currY, self.currX - 2] = 1
-            elif self.orientation == 0:
-                if self.map[self.currY, self.currX + 1] != 3:
-                    self.map[self.currY, self.currX + 1] = 2
-                # self.map[self.currY, self.currX + 2] = 1
         elif proxyData[2] == None:
             if self.orientation == 1:
                 if self.map[self.currY + 1, self.currX] != 3:
                     self.map[self.currY + 1, self.currX] = 2
-                # if self.map[self.currY + 2, self.currX] != 3:
-                #     self.map[self.currY + 2, self.currX] = 2
             elif self.orientation == 3:
                 if self.map[self.currY - 1, self.currX] != 3:
                     self.map[self.currY - 1, self.currX] = 2
-                # if self.map[self.currY - 2, self.currX] != 3:
-                #     self.map[self.currY - 2, self.currX] = 2
             elif self.orientation == 2:
                 if self.map[self.currY, self.currX - 1] != 3:
                     self.map[self.currY, self.currX - 1] = 2
-                # if self.map[self.currY, self.currX - 2] != 3:
-                #     self.map[self.currY, self.currX - 2] = 2
             elif self.orientation == 0:
                 if self.map[self.currY, self.currX + 1] != 3:
                     self.map[self.currY, self.currX + 1] = 2
-                # if self.map[self.currY, self.currX + 2] != 3:
-                #     self.map[self.currY, self.currX + 2] = 2
 
-    def __convertToTurn(self, dir):  # dir: 0 = up/North, 1 = right/East, 2 = down/South, 3 = left/West
-        if dir == 0:  # up
+    def __convertToTurn(self, dir):
+        """
+        converts direction of next block to go to, into robot moves. based on robots current orientation
+
+        :param:     dir = direction of next block to move to
+                                0 = up/North
+                                1 = right/East
+                                2 = down/South
+                                3 = left/West
+        :return:    move(s) = list of next move or moves for robot
+                                R = pivot right
+                                L = pivot left
+                                F = move forward
+                                C = capture vision sensor & check for pants
+        """
+        if dir == 0:                                # up
             if self.orientation == 1:
                 self.orientation = 0
                 return ['L']
@@ -269,7 +242,7 @@ class Navigation:
                 return ['L', 'L']
             elif self.orientation == 0:
                 return []
-        elif dir == 1:  # right
+        elif dir == 1:                              # right
             if self.orientation == 1:
                 return []
             elif self.orientation == 3:
@@ -281,7 +254,7 @@ class Navigation:
             elif self.orientation == 0:
                 self.orientation = 1
                 return ['R']
-        elif dir == 2:  # down
+        elif dir == 2:                              # down
             if self.orientation == 1:
                 self.orientation = 2
                 return ['R']
@@ -293,7 +266,7 @@ class Navigation:
             elif self.orientation == 0:
                 self.orientation = 2
                 return ['L', 'L']
-        elif dir == 3:  # left
+        elif dir == 3:                              # left
             if self.orientation == 1:
                 self.orientation = 3
                 return ['L', 'L']
@@ -307,8 +280,18 @@ class Navigation:
                 return ['L']
 
     def __getMapOffsets(self):
+        """
+        return extra maps (using same mem location) for more efficient comparisons between neighboring cells
+
+        :param:     dir = direction of next block to move to
+                                0 = up/North
+                                1 = right/East
+                                2 = down/South
+                                3 = left/West
+        :return:    mapOffsets = tuple of matrices shifted by 1 to compare neighboring blocks easily
+                                        (shifted up, shifted right, shifted down, shifted left)
+        """
         map = self.map.copy()
-        # make extra maps (using same mem location) for more efficient comparisons between neighboring cells
         map_up = np.zeros((self.h + 1, self.w), np.uint8)  # create 4-neighbor connectivity comparision
         map_down = np.zeros((self.h + 1, self.w), np.uint8)
         map_right = np.zeros((self.h, self.w + 1), np.uint8)
@@ -325,12 +308,20 @@ class Navigation:
         map_down[-1, :] = 1
         map_right[:, -1] = 1
         map_left[:, 0] = 1
-        # for dir, m in enumerate((map_up, map_down, map_right, map_left)):
-        #     print(m)
-        #     print(dir, currPos)
         return map_up, map_right, map_down, map_left
 
     def __convertToPathEXIT(self, options):
+        """
+        once depth first search has found the exit, this will convert the matrix to a single path
+                                                                      & return as robot functions
+
+        :param:     options = matrix showing results of the dapth 1st searh
+        :return:    moves = list of next moves for robot
+                                R = pivot right
+                                L = pivot left
+                                F = move forward
+                                C = capture vision sensor & check for pants
+        """
         options[options == 0] = 255
         options[self.currY, self.currX] = 0
         cur = (self.exitY, self.exitX)
