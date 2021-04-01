@@ -38,7 +38,6 @@ class Robo(object):
 
         :return: None
         """
-
         # get those noodles up!
         self.__reset_arms()
 
@@ -49,6 +48,7 @@ class Robo(object):
                 found_pants = False
                 proxy_data = self.__get_surroundings()
                 moves = self.nav.getnextPos(proxy_data)
+                self.nav.display()
                 # move:
                 for m in moves:
                     found_pants = self.__move(m)
@@ -121,20 +121,20 @@ class Robo(object):
         if move == "L":
             snap_point = self.__get_left_cardinality()
             self.__snap_to_cardinal_point(snap_point)
-            print("left pivot")
+            #print("left pivot")
         elif move == "R":
             snap_point = self.__get_right_cardinality()
             self.__snap_to_cardinal_point(snap_point)
-            print("right pivot")
+            #print("right pivot")
         elif move == "F":
             self.__step_forward(1)
-            print("move 1 forward")
+            #print("move 1 forward")
         elif move == "C":
             pass
             #  TODO : What is needed here?
-            if self.boundary.get_vision():
-                self.__pick_up()
-                return True
+            # if self.boundary.get_vision():
+            #     self.__pick_up()
+            #     return True
         return False
 
     def __pick_up(self):

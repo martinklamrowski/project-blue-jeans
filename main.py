@@ -1,8 +1,8 @@
 import argparse
 
-from utils.boundary import Boundary
-from utils.maze import Maze
-from utils.navigation import Navigation
+from pyrobo.boundary import Boundary
+from pyrobo.maze import Maze
+from pyrobo.navigation import Navigation
 from pyrobo.robo import Robo
 
 ap = argparse.ArgumentParser(description="Go Robo go!")

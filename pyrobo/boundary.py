@@ -6,6 +6,9 @@ Class to handle direct communication with CoppeliaSim using the RemoteAPI.
     like step the Robo forward one block.
 """
 import math
+import time
+import numpy as np
+import matplotlib as mpl
 
 import sim_lib.sim as sim
 import sim_lib.simConst as sC
@@ -37,7 +40,6 @@ class Boundary(object):
         :param angular_point: float -> angular point, probably as defined in constants.py.
         :return: None
         """
-
         object_name = "body"
         oriented = False
 
@@ -47,8 +49,12 @@ class Boundary(object):
             return
 
         # start turning
-        self.set_left_motor_velocity(velocity)
-        self.set_right_motor_velocity(-velocity)
+        if vec.get_closer_rotation_direction(starting_orientation, angular_point):
+            self.set_left_motor_velocity(velocity)
+            self.set_right_motor_velocity(-velocity)
+        else:
+            self.set_left_motor_velocity(-velocity)
+            self.set_right_motor_velocity(velocity)
 
         while not oriented:
             euler_angles = self.get_orientation(object_name)
@@ -80,11 +86,11 @@ class Boundary(object):
         if angular_point == 0 or angular_point == math.pi:
             # north or south
             moving_in_y = True if angular_point == 0 else False
-            print("north or south")
+            #print("north or south")
         elif angular_point == 3 * math.pi / 2 or angular_point == math.pi / 2:
             # east or west
             moving_in_x = True if angular_point == 3 * math.pi / 2 else False
-            print("east or west")
+            #print("east or west")
 
         # GPS baby!
         # but this actually isn't that bad; if need be, presumably
@@ -115,7 +121,6 @@ class Boundary(object):
         self.set_right_motor_velocity(-velocity * cc_factors[1])
 
         while not there:
-
             if self.override_step_forward():
                 print("OVERRIDE")
                 break
@@ -196,7 +201,6 @@ class Boundary(object):
 
         elif distance_reading < 0.25:
             return True
-
         else:
             return False
 
@@ -229,41 +233,6 @@ class Boundary(object):
         else:
             print("NoMatch")
             return False
-
-    # def get_vision(self):
-    #     """
-    #     takes picture with robot's camera (optical / vision sensor)
-    #     NOTE: we are using only the top half of the sensor! (this method will crop it)
-    #     returns:
-    #     - image
-    #         [y, x, colors] : numpy array
-    #             note: colors=[r,g,b]
-    #     """
-    #     # print(sim.simxGetVisionSensorImage(self.__clientID,self.visionSensor,0,sC.simx_opmode_blocking)[1:3])
-    #     # print(len(sim.simxGetVisionSensorImage(self.__clientID,self.visionSensor,0,sC.simx_opmode_blocking)[1:3]))
-    #     [width, height], data = sim.simxGetVisionSensorImage(self.__clientID, self.visionSensor, 0,
-    #                                                          sC.simx_opmode_blocking)[1:3]
-    #
-    #     #   Conversion
-    #     # image = np.ndarray((height, width, 3), np.uint8)
-    #     # for d in range(len(data) // 2):
-    #     for h in range(height):
-    #         for w in range(width):
-    #             for c in range(3):  # color
-    #                 image[h, w, c] = data[c + (width - w) * (h)]  # this doesnt work yet!
-    #                 print(h, w, c, '\t', c + (width - w) + width * (h))
-    #
-    #         # data[d] = 100
-    #         # if data[d] > 35: data[d] -= 36
-    #     print(type[data[0]])
-    #     print([width, height], data)
-    #     print()
-    #     print(image)
-    #     # plt.axis("off")
-    #     # plt.imshow(image)
-    #     # plt.show()
-    #
-    #     return 0
 
     def get_orientation(self, object_name):
         """
@@ -321,7 +290,7 @@ class Boundary(object):
         reading = sim.simxReadProximitySensor(self.__clientID, handle,
                                               sC.simx_opmode_blocking)
 
-        print("{} - {}".format(proxie_name, reading[2][2]))
+        #print("{} - {}".format(proxie_name, reading[2][2]))
         if reading[1]:
             return reading[2][2]
         else:

@@ -14,6 +14,7 @@ $ pip install msgpack
 $ pip install colorama
 $ pip install keyboard
 $ pip install numpy
+$ pip install matplotlib
 ```
 
 【Usage】

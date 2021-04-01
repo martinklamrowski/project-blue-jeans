@@ -1,4 +1,7 @@
+import sys
+
 import numpy as np
+np.set_printoptions(threshold=sys.maxsize)
 
 
 class Navigation:
@@ -30,6 +33,15 @@ class Navigation:
         self.map[:, 0] = 1
         self.map[:, -1] = 1
         self.map[self.currY, self.currX] = 3
+
+    def display(self):
+        """
+        Displays the map as the Robo updates it.
+
+        :return: None
+        """
+
+        print(self.map)
 
     def getnextPos(self, proxyData):
 
