@@ -19,6 +19,7 @@ class Maze:
         self.WALL = 'w'
         self.UNVISITED_CELL = 'u'
         self.OBJECT = 'O'
+        self.ROBOT = 'R'
         self.opening = opening  # Opening in the maze
 
     def render(self):
@@ -32,6 +33,8 @@ class Maze:
                     print(Fore.RED, f'{self.maze[col][row]}' + ' ', end='')
                 elif (self.maze[col][row] == self.OBJECT):
                     print(Fore.YELLOW, f'{self.maze[col][row]}' + ' ', end='')
+                elif (self.maze[col][row] == self.ROBOT):
+                    print(Fore.CYAN, f'{self.maze[col][row]}' + ' ', end='')
             print()
         print(ansi.Style.RESET_ALL)
 
@@ -94,22 +97,22 @@ class Maze:
         if self.opening == 'west':
             for y in range(self.length):
                 if (self.maze[1][y] == self.CELL):
-                    self.maze[0][y] = self.CELL
+                    self.maze[0][y] = self.ROBOT
                     break
         if self.opening == 'east':
             for y in range(self.length):
                 if (self.maze[self.width - 2][y] == self.CELL):
-                    self.maze[self.width - 1][y] = self.CELL
+                    self.maze[self.width - 1][y] = self.ROBOT
                     break
         if self.opening == 'north':
             for x in range(self.length):
                 if (self.maze[x][1] == self.CELL):
-                    self.maze[x][0] = self.CELL
+                    self.maze[x][0] = self.ROBOT
                     break
         if self.opening == 'south':
             for x in range(self.length):
                 if (self.maze[x][self.length - 2] == self.CELL):
-                    self.maze[x][self.length - 1] = self.CELL
+                    self.maze[x][self.length - 1] = self.ROBOT
                     break
 
     def generate_maze(self, opening='west'):
@@ -143,7 +146,7 @@ class Maze:
 
         # Turns walls (w) into a path block (c) when it divides an already visited path block and an unvisisted block (u)
         # only when the walls are surrounded by only one visited path block.
-        while (walls):
+        while walls:
             rand_wall = walls[randint(0, len(walls) - 1)]
             wall_x, wall_y = rand_wall
 
@@ -171,6 +174,7 @@ class Maze:
                 if (self.maze[col][row] == self.UNVISITED_CELL):
                     self.maze[col][row] = self.WALL
 
+        self.generate_object()
         self.create_opening()
 
     def generate_object(self):
@@ -198,3 +202,8 @@ class Maze:
                 reduced_map.append(block)
 
         return reduced_map
+
+# if __name__ == "__main__":
+#     m = Maze(12, 12, 'west')
+#     m.generate_maze()
+#     m.render()
