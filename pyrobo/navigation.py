@@ -37,32 +37,31 @@ class Navigation:
     def display(self):
         """
         Displays the map as the Robo updates it.
-
         :return: None
         """
         mapShow = self.map.copy()
-        mapShow[self.currY,self.currX] = 4
+        mapShow[self.currY, self.currX] = 4
 
-        for col in range(self.h):
-            for row in range(self.w):
-                if (mapShow[col,row] == 1):
-                    print(Fore.WHITE, f'{mapShow[col,row]}' + ' ', end='')
-                elif (mapShow[col,row] == 3):
-                    print(Fore.RED, f'{mapShow[col,row]}' + ' ', end='')
-                elif (mapShow[col,row] == 2):
-                    print(Fore.YELLOW, f'{mapShow[col,row]}' + ' ', end='')
-                elif (mapShow[col,row] == 0):
-                    print(Fore.BLACK, f'{mapShow[col,row]}' + ' ', end='')
-                elif (mapShow[col,row] == 4):
-                    print(Fore.GREEN, f'{mapShow[col,row]}' + ' ', end='')
-            print()
-        print(ansi.Style.RESET_ALL)
+        # for col in range(self.h):
+        #     for row in range(self.w):
+        #         if (mapShow[col,row] == 1):
+        #             print(Fore.WHITE, f'{mapShow[col,row]}' + ' ', end='')
+        #         elif (mapShow[col,row] == 3):
+        #             print(Fore.RED, f'{mapShow[col,row]}' + ' ', end='')
+        #         elif (mapShow[col,row] == 2):
+        #             print(Fore.YELLOW, f'{mapShow[col,row]}' + ' ', end='')
+        #         elif (mapShow[col,row] == 0):
+        #             print(Fore.BLACK, f'{mapShow[col,row]}' + ' ', end='')
+        #         elif (mapShow[col,row] == 4):
+        #             print(Fore.GREEN, f'{mapShow[col,row]}' + ' ', end='')
+        #     print()
+        # print(ansi.Style.RESET_ALL)
+        print(mapShow)
 
     def getnextPos(self, proxyData):
         """
         pases proxyData to update map then
         uses wallflower algorithm to determine next set of moves
-
         :param:     proxyData = data from surrounding blocks (defined in greater detail on line 141 for __updateMap() )
         :return:    moves = list of next moves for robot
                                 R = pivot right
@@ -106,7 +105,6 @@ class Navigation:
     def goToExit(self):
         """
         uses depth first search to find shortest route to exit
-
         :return:    moves = list of next moves for robot
                                 R = pivot right
                                 L = pivot left
@@ -137,7 +135,6 @@ class Navigation:
     def __updateMap(self, proxyData):
         """
         updates map based on proxy sensors
-
         :param:     proxyData = data from surrounding blocks [Left, Center, Right]
                                 0 = wall right next to robot
                                 None = no wall next to robot
@@ -218,7 +215,6 @@ class Navigation:
     def __convertToTurn(self, dir):
         """
         converts direction of next block to go to, into robot moves. based on robots current orientation
-
         :param:     dir = direction of next block to move to
                                 0 = up/North
                                 1 = right/East
@@ -282,7 +278,6 @@ class Navigation:
     def __getMapOffsets(self):
         """
         return extra maps (using same mem location) for more efficient comparisons between neighboring cells
-
         :param:     dir = direction of next block to move to
                                 0 = up/North
                                 1 = right/East
@@ -314,7 +309,6 @@ class Navigation:
         """
         once depth first search has found the exit, this will convert the matrix to a single path
                                                                       & return as robot functions
-
         :param:     options = matrix showing results of the dapth 1st searh
         :return:    moves = list of next moves for robot
                                 R = pivot right
