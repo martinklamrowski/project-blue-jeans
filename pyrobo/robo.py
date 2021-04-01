@@ -43,12 +43,12 @@ class Robo(object):
 
         if not self.manual:
             # Exploring:
+            found_pants = False
             while True:
                 # collect data:
-                found_pants = False
                 proxy_data = self.__get_surroundings()
-                moves = self.nav.getnextPos(proxy_data)
                 self.nav.display()
+                moves = self.nav.getnextPos(proxy_data)
                 # move:
                 for m in moves:
                     found_pants = self.__move(m)

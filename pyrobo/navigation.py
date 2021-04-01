@@ -40,8 +40,9 @@ class Navigation:
 
         :return: None
         """
-
-        print(self.map)
+        mapShow = self.map.copy()
+        mapShow[self.currY,self.currX] = 4
+        print(mapShow)
 
     def getnextPos(self, proxyData):
 
