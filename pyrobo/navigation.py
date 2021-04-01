@@ -105,7 +105,7 @@ class Navigation:
         if proxyData[0] == 0:
             if self.orientation == 1:
                 self.map[self.currY - 1, self.currX] = 1
-            elif self.orientation == 'W':
+            elif self.orientation == 3:
                 self.map[self.currY + 1, self.currX] = 1
             elif self.orientation == 2:
                 self.map[self.currY, self.currX + 1] = 1
@@ -115,40 +115,40 @@ class Navigation:
             if self.orientation == 1:
                 if self.map[self.currY - 1, self.currX] != 3:
                     self.map[self.currY - 1, self.currX] = 2
-                self.map[self.currY - 2, self.currX] = 1
-            elif self.orientation == 'W':
+                # self.map[self.currY - 2, self.currX] = 1
+            elif self.orientation == 3:
                 if self.map[self.currY + 1, self.currX] != 3:
                     self.map[self.currY + 1, self.currX] = 2
-                self.map[self.currY + 2, self.currX] = 1
+                # self.map[self.currY + 2, self.currX] = 1
             elif self.orientation == 2:
                 if self.map[self.currY, self.currX + 1] != 3:
                     self.map[self.currY, self.currX + 1] = 2
-                self.map[self.currY, self.currX + 2] = 1
+                # self.map[self.currY, self.currX + 2] = 1
             elif self.orientation == 0:
                 if self.map[self.currY, self.currX - 1] != 3:
                     self.map[self.currY, self.currX - 1] = 2
-                self.map[self.currY, self.currX - 2] = 1
+                # self.map[self.currY, self.currX - 2] = 1
         elif proxyData[0] == None:
             if self.orientation == 1:
                 if self.map[self.currY - 1, self.currX] != 3:
                     self.map[self.currY - 1, self.currX] = 2
-                if self.map[self.currY - 2, self.currX] != 3:
-                    self.map[self.currY - 2, self.currX] = 2
-            elif self.orientation == 'W':
+                # if self.map[self.currY - 2, self.currX] != 3:
+                #     self.map[self.currY - 2, self.currX] = 2
+            elif self.orientation == 3:
                 if self.map[self.currY + 1, self.currX] != 3:
                     self.map[self.currY + 1, self.currX] = 2
-                if self.map[self.currY + 2, self.currX] != 3:
-                    self.map[self.currY + 2, self.currX] = 2
+                # if self.map[self.currY + 2, self.currX] != 3:
+                #     self.map[self.currY + 2, self.currX] = 2
             elif self.orientation == 2:
                 if self.map[self.currY, self.currX + 1] != 3:
                     self.map[self.currY, self.currX + 1] = 2
-                if self.map[self.currY, self.currX + 2] != 3:
-                    self.map[self.currY, self.currX + 2] = 2
+                # if self.map[self.currY, self.currX + 2] != 3:
+                #     self.map[self.currY, self.currX + 2] = 2
             elif self.orientation == 0:
                 if self.map[self.currY, self.currX - 1] != 3:
                     self.map[self.currY, self.currX - 1] = 2
-                if self.map[self.currY, self.currX - 2] != 3:
-                    self.map[self.currY, self.currX - 2] = 2
+                # if self.map[self.currY, self.currX - 2] != 3:
+                #     self.map[self.currY, self.currX - 2] = 2
 
         # Center Sensor: (it has vision so it will fully see the block)
         if proxyData[1] == 0:
@@ -163,33 +163,33 @@ class Navigation:
         elif proxyData[1] == 1:
             if self.orientation == 1:
                 self.map[self.currY, self.currX + 1] = 3
-                self.map[self.currY, self.currX + 2] = 1
+                # self.map[self.currY, self.currX + 2] = 1
             elif self.orientation == 3:
                 self.map[self.currY, self.currX - 1] = 3
-                self.map[self.currY, self.currX - 2] = 1
+                # self.map[self.currY, self.currX - 2] = 1
             elif self.orientation == 2:
                 self.map[self.currY + 1, self.currX] = 3
-                self.map[self.currY + 2, self.currX] = 1
+                # self.map[self.currY + 2, self.currX] = 1
             elif self.orientation == 0:
                 self.map[self.currY - 1, self.currX] = 3
-                self.map[self.currY - 2, self.currX] = 1
+                # self.map[self.currY - 2, self.currX] = 1
         elif proxyData[1] == None:
             if self.orientation == 1:
                 self.map[self.currY, self.currX + 1] = 3
-                if self.map[self.currY, self.currX + 2] != 3:
-                    self.map[self.currY, self.currX + 2] = 2
+                # if self.map[self.currY, self.currX + 2] != 3:
+                #     self.map[self.currY, self.currX + 2] = 2
             elif self.orientation == 3:
                 self.map[self.currY, self.currX - 1] = 3
-                if self.map[self.currY, self.currX - 2] != 3:
-                    self.map[self.currY, self.currX - 2] = 2
+                # if self.map[self.currY, self.currX - 2] != 3:
+                #     self.map[self.currY, self.currX - 2] = 2
             elif self.orientation == 2:
                 self.map[self.currY + 1, self.currX] = 3
-                if self.map[self.currY + 2, self.currX] != 3:
-                    self.map[self.currY + 2, self.currX] = 2
+                # if self.map[self.currY + 2, self.currX] != 3:
+                #     self.map[self.currY + 2, self.currX] = 2
             elif self.orientation == 0:
                 self.map[self.currY - 1, self.currX] = 3
-                if self.map[self.currY - 2, self.currX] != 3:
-                    self.map[self.currY - 2, self.currX] = 2
+                # if self.map[self.currY - 2, self.currX] != 3:
+                #     self.map[self.currY - 2, self.currX] = 2
 
                     # Right Sensor:
         if proxyData[2] == 0:
@@ -205,40 +205,40 @@ class Navigation:
             if self.orientation == 1:
                 if self.map[self.currY + 1, self.currX] != 3:
                     self.map[self.currY + 1, self.currX] = 2
-                self.map[self.currY + 2, self.currX] = 1
+                # self.map[self.currY + 2, self.currX] = 1
             elif self.orientation == 3:
                 if self.map[self.currY - 1, self.currX] != 3:
                     self.map[self.currY - 1, self.currX] = 2
-                self.map[self.currY - 2, self.currX] = 1
+                # self.map[self.currY - 2, self.currX] = 1
             elif self.orientation == 2:
                 if self.map[self.currY, self.currX - 1] != 3:
                     self.map[self.currY, self.currX - 1] = 2
-                self.map[self.currY, self.currX - 2] = 1
+                # self.map[self.currY, self.currX - 2] = 1
             elif self.orientation == 0:
                 if self.map[self.currY, self.currX + 1] != 3:
                     self.map[self.currY, self.currX + 1] = 2
-                self.map[self.currY, self.currX + 2] = 1
+                # self.map[self.currY, self.currX + 2] = 1
         elif proxyData[2] == None:
             if self.orientation == 1:
                 if self.map[self.currY + 1, self.currX] != 3:
                     self.map[self.currY + 1, self.currX] = 2
-                if self.map[self.currY + 2, self.currX] != 3:
-                    self.map[self.currY + 2, self.currX] = 2
+                # if self.map[self.currY + 2, self.currX] != 3:
+                #     self.map[self.currY + 2, self.currX] = 2
             elif self.orientation == 3:
                 if self.map[self.currY - 1, self.currX] != 3:
                     self.map[self.currY - 1, self.currX] = 2
-                if self.map[self.currY - 2, self.currX] != 3:
-                    self.map[self.currY - 2, self.currX] = 2
+                # if self.map[self.currY - 2, self.currX] != 3:
+                #     self.map[self.currY - 2, self.currX] = 2
             elif self.orientation == 2:
                 if self.map[self.currY, self.currX - 1] != 3:
                     self.map[self.currY, self.currX - 1] = 2
-                if self.map[self.currY, self.currX - 2] != 3:
-                    self.map[self.currY, self.currX - 2] = 2
+                # if self.map[self.currY, self.currX - 2] != 3:
+                #     self.map[self.currY, self.currX - 2] = 2
             elif self.orientation == 0:
                 if self.map[self.currY, self.currX + 1] != 3:
                     self.map[self.currY, self.currX + 1] = 2
-                if self.map[self.currY, self.currX + 2] != 3:
-                    self.map[self.currY, self.currX + 2] = 2
+                # if self.map[self.currY, self.currX + 2] != 3:
+                #     self.map[self.currY, self.currX + 2] = 2
 
     def __convertToTurn(self, dir):  # dir: 0 = up/North, 1 = right/East, 2 = down/South, 3 = left/West
         if dir == 0:  # up
