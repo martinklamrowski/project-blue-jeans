@@ -159,9 +159,9 @@ class Robo(object):
         right_reading = self.boundary.get_proxie(proxie_name="right_proxie")
 
         surroundings = (
-            0 if left_reading is not None else 1,
-            0 if front_reading is not None else 1,
-            0 if right_reading is not None else 1
+            0 if left_reading is not None else None,
+            0 if front_reading is not None else None,
+            0 if right_reading is not None else None
         )
         return surroundings
 
