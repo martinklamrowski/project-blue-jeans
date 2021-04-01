@@ -5,8 +5,7 @@
 
 【Required】
  - CoppeliaSim to open the scene.
-    - scenes/maze.ttt
- - Steps from the Lab Report that I'm too lazy to get right now. [TODO]
+    - coppelia_artifacts/maze.ttt
 
 【Package/Module Dependencies】
 ```bash
@@ -19,7 +18,7 @@ $ pip install matplotlib
 
 【Usage】
 ```bash
-$ python main.py -p <port> -d <maze_length maze_width>
+$ python main.py -p <port> -d <maze_length> <maze_width>
 ```
 Note: Coppelia port set in scene is 8008.
 
