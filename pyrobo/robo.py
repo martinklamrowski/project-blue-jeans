@@ -54,7 +54,7 @@ class Robo(object):
                     found_pants = self.__move(m)
                     if found_pants:
                         break
-                        
+
                 if found_pants:
                     break
 
@@ -66,47 +66,9 @@ class Robo(object):
             self.boundary.close_sim_connection()
 
         else:
-            while True:
-                if keyboard.is_pressed("u"):
-                    self.__raise_arm_step(consts.LEFT_ARM)
-                elif keyboard.is_pressed("j"):
-                    self.__lower_arm_step(consts.LEFT_ARM)
-                if keyboard.is_pressed("i"):
-                    self.__raise_arm_step(consts.RIGHT_ARM)
-                elif keyboard.is_pressed("k"):
-                    self.__lower_arm_step(consts.RIGHT_ARM)
-
-                if keyboard.is_pressed("w"):
-                    if keyboard.is_pressed("a"):
-                        self.__accelerate_forward(turn="left")
-                    elif keyboard.is_pressed("d"):
-                        self.__accelerate_forward(turn="right")
-                    else:
-                        self.__accelerate_forward(turn=None)
-                elif keyboard.is_pressed("s"):
-                    if keyboard.is_pressed("a"):
-                        self.__accelerate_backward(turn="left")
-                    elif keyboard.is_pressed("d"):
-                        self.__accelerate_backward(turn="right")
-                    else:
-                        self.__accelerate_backward(turn=None)
-                elif keyboard.is_pressed("1"):
-                    self.__snap_to_cardinal_point(consts.EAST)
-                elif keyboard.is_pressed("2"):
-                    self.__snap_to_cardinal_point(consts.SOUTH)
-                elif keyboard.is_pressed("0"):
-                    self.__snap_to_cardinal_point(consts.NORTH)
-                elif keyboard.is_pressed("3"):
-                    self.__snap_to_cardinal_point(consts.WEST)
-                elif keyboard.is_pressed("t"):
-                    self.__print_robo_orientation()
-                elif keyboard.is_pressed("m"):
-                    self.__step_forward(1)
-                #  TODO : Vision sensor testing; remove.
-                elif keyboard.is_pressed("="):
-                    self.boundary.get_vision("ortho")
-                else:
-                    self.__decelerate()
+            quitted = False
+            while not quitted:
+                quitted = self.__poll_keyboard()
 
     def __move(self, move):
         """
@@ -126,12 +88,22 @@ class Robo(object):
         elif move == "F":
             self.__step_forward(1)
         elif move == "C":
-            pass
-            #  TODO : What is needed here?
-            # if self.boundary.get_vision():
-            #     self.__pick_up()
-            #     return True
+            # pass
+            if self.boundary.get_vision("ortho"):
+                self.__switch_to_manual()
+                return True
         return False
+
+    def __switch_to_manual(self):
+        """
+        Poll keyboard input.
+
+        :return: bool -> True/False did the user quit.
+        """
+        print("SWITCHING TO MANUAL REMOTE CONTROL. GODSPEED.")
+        ceded = False
+        while not ceded:
+            ceded = self.__poll_keyboard()
 
     def __pick_up(self):
         #  TODO : Ya mon.
@@ -290,7 +262,7 @@ class Robo(object):
         :return: None
         """
         for _ in range(num_steps):
-            self.boundary.step_forward(consts.NOMINAL_VELOCITY,
+            self.boundary.step_forward(consts.NOMINAL_STEP_VELOCITY,
                                        consts.ANGULAR_POINTS[self.orientation])
 
     def __accelerate_forward(self, turn):
@@ -368,6 +340,52 @@ class Robo(object):
                 self.vel_y = self.vel_y + consts.ACCELERATION if self.vel_y < 0 else self.vel_y - consts.ACCELERATION
         self.boundary.set_left_motor_velocity(self.vel_y)
         self.boundary.set_right_motor_velocity(self.vel_y)
+
+    def __poll_keyboard(self):
+        if keyboard.is_pressed("u"):
+            self.__raise_arm_step(consts.LEFT_ARM)
+        elif keyboard.is_pressed("j"):
+            self.__lower_arm_step(consts.LEFT_ARM)
+        if keyboard.is_pressed("i"):
+            self.__raise_arm_step(consts.RIGHT_ARM)
+        elif keyboard.is_pressed("k"):
+            self.__lower_arm_step(consts.RIGHT_ARM)
+
+        if keyboard.is_pressed("w"):
+            if keyboard.is_pressed("a"):
+                self.__accelerate_forward(turn="left")
+            elif keyboard.is_pressed("d"):
+                self.__accelerate_forward(turn="right")
+            else:
+                self.__accelerate_forward(turn=None)
+        elif keyboard.is_pressed("s"):
+            if keyboard.is_pressed("a"):
+                self.__accelerate_backward(turn="left")
+            elif keyboard.is_pressed("d"):
+                self.__accelerate_backward(turn="right")
+            else:
+                self.__accelerate_backward(turn=None)
+        elif keyboard.is_pressed("1"):
+            self.__snap_to_cardinal_point(consts.EAST)
+        elif keyboard.is_pressed("2"):
+            self.__snap_to_cardinal_point(consts.SOUTH)
+        elif keyboard.is_pressed("0"):
+            self.__snap_to_cardinal_point(consts.NORTH)
+        elif keyboard.is_pressed("3"):
+            self.__snap_to_cardinal_point(consts.WEST)
+        elif keyboard.is_pressed("t"):
+            self.__print_robo_orientation()
+        elif keyboard.is_pressed("m"):
+            self.__step_forward(1)
+        elif keyboard.is_pressed("q"):
+            return True
+        #  TODO : Vision sensor testing; remove.
+        elif keyboard.is_pressed("="):
+            self.boundary.get_vision("ortho")
+        else:
+            self.__decelerate()
+
+        return False
 
     def __print_robo_orientation(self):
         #  TODO : Testing; remove.

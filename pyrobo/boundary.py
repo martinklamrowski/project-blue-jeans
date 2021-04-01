@@ -202,9 +202,9 @@ class Boundary(object):
 
     def get_vision(self, object_id):
         """
-           Function that returns True or False depending on the color it sees.
+        Function that returns True or False depending on the color it sees.
 
-           :return: True if color matches (blue jeans), else return False
+        :return: True if color matches (blue jeans), else return False
         """
         # Get the handle of vision sensor
         err, vsh = sim.simxGetObjectHandle(self.__clientID, object_id, sC.simx_opmode_oneshot_wait)
@@ -221,8 +221,8 @@ class Boundary(object):
 
         print(sensorImage[61][65])
         # Use matplotlib.imshow to show the image
-        mpl.imshow(sensorImage, origin='lower')
-        mpl.show()
+        # mpl.imshow(sensorImage, origin='lower')
+        # mpl.show()
 
         # 61 and 65 represent the x, y coordinates in the image shown
         bleu = sensorImage[61][65]
