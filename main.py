@@ -1,7 +1,7 @@
 import argparse
 
 from pyrobo.boundary import Boundary
-from pyrobo.maze import Maze
+from utils.maze import Maze
 from pyrobo.navigation import Navigation
 from pyrobo.robo import Robo
 
@@ -21,7 +21,7 @@ def main():
     # generate maze
     maze = Maze(length=int(args["dim"][0]), width=int(args["dim"][1]), opening="west")
     maze.generate_maze()
-    maze.generate_object()  # TODO : Figure this out.
+    maze.generate_object()
     b.generate_maze_in_coppelia(maze=maze)
 
     # go robo go

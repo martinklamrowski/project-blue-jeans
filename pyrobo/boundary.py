@@ -84,13 +84,10 @@ class Boundary(object):
         there = False
 
         if angular_point == 0 or angular_point == math.pi:
-            # north or south
             moving_in_y = True if angular_point == 0 else False
-            #print("north or south")
+
         elif angular_point == 3 * math.pi / 2 or angular_point == math.pi / 2:
-            # east or west
             moving_in_x = True if angular_point == 3 * math.pi / 2 else False
-            #print("east or west")
 
         # GPS baby!
         # but this actually isn't that bad; if need be, presumably
@@ -122,7 +119,6 @@ class Boundary(object):
 
         while not there:
             if self.override_step_forward():
-                print("OVERRIDE")
                 break
 
             position = self.get_position(object_name)  # [x, y, z]
@@ -290,7 +286,6 @@ class Boundary(object):
         reading = sim.simxReadProximitySensor(self.__clientID, handle,
                                               sC.simx_opmode_blocking)
 
-        #print("{} - {}".format(proxie_name, reading[2][2]))
         if reading[1]:
             return reading[2][2]
         else:

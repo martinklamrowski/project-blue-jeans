@@ -101,13 +101,11 @@ class Robo(object):
                     self.__print_robo_orientation()
                 elif keyboard.is_pressed("m"):
                     self.__step_forward(1)
-                # for testing purposes for vision sensor
+                #  TODO : Vision sensor testing; remove.
                 elif keyboard.is_pressed("="):
                     self.boundary.get_vision("ortho")
                 else:
                     self.__decelerate()
-
-                # print("{} X | {} Y".format(self.__get_vel_x(), self.__get_vel_y()))
 
     def __move(self, move):
         """
@@ -121,14 +119,11 @@ class Robo(object):
         if move == "L":
             snap_point = self.__get_left_cardinality()
             self.__snap_to_cardinal_point(snap_point)
-            #print("left pivot")
         elif move == "R":
             snap_point = self.__get_right_cardinality()
             self.__snap_to_cardinal_point(snap_point)
-            #print("right pivot")
         elif move == "F":
             self.__step_forward(1)
-            #print("move 1 forward")
         elif move == "C":
             pass
             #  TODO : What is needed here?
@@ -364,7 +359,7 @@ class Robo(object):
 
         :return: None
         """
-        # TODO : Using self.vel_y as speed for now.
+        #  TODO : Using self.vel_y as speed for now.
         if self.vel_y != 0:
             if self.vel_y < math.fabs(consts.ACCELERATION):
                 self.vel_y = 0
@@ -374,7 +369,7 @@ class Robo(object):
         self.boundary.set_right_motor_velocity(self.vel_y)
 
     def __print_robo_orientation(self):
-        # TODO : Testing; remove.
+        #  TODO : Testing; remove.
         stuff = self.boundary.get_orientation("body")
         print(stuff)
         print(vec.euler_g_to_rad(stuff[2]))
