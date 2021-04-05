@@ -228,7 +228,7 @@ class Boundary(object):
         bleu = sensorImage[61][65]
 
         # if the image contains blue value (255) it will be a match
-        if bleu[2] == 255:
+        if bleu[2] >= 100:
             print("Match")
             return True
 
