@@ -9,14 +9,14 @@
 
 ![an image has mysteriously gone missing, please notify the relevant authorities if you find it](https://github.com/SYSC4805-Winter-2021/project-blue-jeans/blob/master/misc/concept.png)
 
-【Required】
+### Required
 
  - CoppeliaSim to open the scene.
     - coppelia_artifacts/maze.ttt
 
 Note: Coppelia port set in scene is 8008.
 
-【Package/Module Dependencies】
+### Package Dependencies
 
 ```bash
 $ pip install msgpack
@@ -25,7 +25,7 @@ $ pip install keyboard
 $ pip install numpy
 ```
 
-【Usage】
+### Usage
 
 ```bash
 $ git clone https://github.com/SYSC4805-Winter-2021/project-blue-jeans
@@ -37,7 +37,7 @@ $ python main.py -p <port> -d <maze_length> <maze_width>
 
 Example to run simulation in 18x18 maze: <code>python main.py -p 8008 -d 18 18</code>
 
-【Contributors】
+### Contributors
 
 [@Angela](https://github.com/angiebyun),
 [@Tarun](https://github.com/TarunAK),
