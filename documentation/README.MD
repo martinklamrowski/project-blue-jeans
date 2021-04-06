@@ -1,11 +1,11 @@
 # PYROBO
 ## SYSC4805 Project Documentation - Team Blue Jeans
 
-###【Project Status】
+【Project Status】
 ![an image has mysteriously gone missing, please notify the relevant authorities if you find it](https://github.com/SYSC4805-Winter-2021/project-blue-jeans/blob/master/documentation/concept.png)
 
 
-###【Requirements】
+【Requirements】
 Various diagrams and reports documenting the progression of the project -- from 
 proposal to final product and report.
 
@@ -26,7 +26,7 @@ proposal to final product and report.
 |  A2  | Robot is generalizable to any maze; it goes in blind (with a few assumptions). | <p>[x]</p> |  |
 |  A3  | Robot can be completely controlled manually. | <p>[x]</p> |  |
 
-###【Contributors】
+【Contributors】
 [@Angela](https://github.com/angiebyun),
 [@Tarun](https://github.com/TarunAK),
 [@Martin](https://github.com/martinklamrowski),
