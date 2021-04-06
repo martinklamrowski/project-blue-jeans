@@ -54,7 +54,6 @@ class Robo(object):
                     found_pants = self.__move(m)
                     if found_pants:
                         break
-
                 if found_pants:
                     break
 
