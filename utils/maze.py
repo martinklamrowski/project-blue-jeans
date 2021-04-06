@@ -27,18 +27,18 @@ class Maze:
         init()
         for row in range(self.length):
             for col in range(self.width):
-                if (self.maze[col][row] == self.CELL):
+                if self.maze[col][row] == self.CELL:
                     print(Fore.WHITE, f'{self.maze[col][row]}' + ' ', end='')
-                elif (self.maze[col][row] == self.WALL):
+                elif self.maze[col][row] == self.WALL:
                     print(Fore.RED, f'{self.maze[col][row]}' + ' ', end='')
-                elif (self.maze[col][row] == self.OBJECT):
+                elif self.maze[col][row] == self.OBJECT:
                     print(Fore.YELLOW, f'{self.maze[col][row]}' + ' ', end='')
-                elif (self.maze[col][row] == self.ROBOT):
+                elif self.maze[col][row] == self.ROBOT:
                     print(Fore.CYAN, f'{self.maze[col][row]}' + ' ', end='')
             print()
         print(ansi.Style.RESET_ALL)
 
-    def output(self, filepath='map.txt'):
+    def output(self, filepath='../misc/map.txt'):
         """Outputs maze to a file
         
         Keyword arguments:
@@ -86,7 +86,7 @@ class Maze:
         surrounding_blocks = {"west": [], "east": [], "north": [], "south": []}
 
         for direction in cartesian_surroundings:
-            if (cartesian_surroundings[direction]):
+            if cartesian_surroundings[direction]:
                 block_x, block_y = cartesian_surroundings[direction]
                 surrounding_blocks[direction] = self.maze[block_x][block_y]
 
@@ -96,22 +96,22 @@ class Maze:
         """Creates first opening on one of the four walls of the maze."""
         if self.opening == 'west':
             for y in range(self.length):
-                if (self.maze[1][y] == self.CELL):
+                if self.maze[1][y] == self.CELL:
                     self.maze[0][y] = self.ROBOT
                     break
         if self.opening == 'east':
             for y in range(self.length):
-                if (self.maze[self.width - 2][y] == self.CELL):
+                if self.maze[self.width - 2][y] == self.CELL:
                     self.maze[self.width - 1][y] = self.ROBOT
                     break
         if self.opening == 'north':
             for x in range(self.length):
-                if (self.maze[x][1] == self.CELL):
+                if self.maze[x][1] == self.CELL:
                     self.maze[x][0] = self.ROBOT
                     break
         if self.opening == 'south':
             for x in range(self.length):
-                if (self.maze[x][self.length - 2] == self.CELL):
+                if self.maze[x][self.length - 2] == self.CELL:
                     self.maze[x][self.length - 1] = self.ROBOT
                     break
 
@@ -144,8 +144,8 @@ class Maze:
 
         CARDINAL_COMPLEMENTS = {"west": "east", "east": "west", "north": "south", "south": "north"}
 
-        # Turns walls (w) into a path block (c) when it divides an already visited path block and an unvisisted block (u)
-        # only when the walls are surrounded by only one visited path block.
+        # Turns walls (w) into a path block (c) when it divides an already visited path block and an unvisisted block
+        # (u) only when the walls are surrounded by only one visited path block.
         while walls:
             rand_wall = walls[randint(0, len(walls) - 1)]
             wall_x, wall_y = rand_wall
@@ -154,14 +154,14 @@ class Maze:
             surrounding_blocks = self.get_block_surroundings(wall_x, wall_y)
             surrounding_cells = sum(block == self.CELL for block in surrounding_blocks.values())
 
-            if (surrounding_cells == 1):
+            if surrounding_cells == 1:
                 for direction in surrounding_blocks:
                     if (surrounding_blocks[direction] == self.CELL and surrounding_blocks[
                         CARDINAL_COMPLEMENTS[direction]] == self.UNVISITED_CELL):
                         self.maze[wall_x][wall_y] = self.CELL
                         break
                 for direction in surrounding_blocks:
-                    if (surrounding_blocks[direction] == self.UNVISITED_CELL):
+                    if surrounding_blocks[direction] == self.UNVISITED_CELL:
                         new_x, new_y = cartesian_surroundings[direction]
                         self.maze[new_x][new_y] = self.WALL
                         walls.append([new_x, new_y])
@@ -171,7 +171,7 @@ class Maze:
         # Cleans up redundant blocks
         for col in range(self.width):
             for row in range(self.length):
-                if (self.maze[col][row] == self.UNVISITED_CELL):
+                if self.maze[col][row] == self.UNVISITED_CELL:
                     self.maze[col][row] = self.WALL
 
         self.generate_object()
@@ -183,10 +183,10 @@ class Maze:
 
         for col in range(self.width):
             for row in range(self.length):
-                if (self.maze[col][row] == self.CELL):
+                if self.maze[col][row] == self.CELL:
                     surrounding_blocks = self.get_block_surroundings(col, row)
                     surrounding_cells = sum(block == self.WALL for block in surrounding_blocks.values())
-                    if (surrounding_cells > 2):
+                    if surrounding_cells > 2:
                         deadends.append([col, row])
 
         seed()
@@ -202,8 +202,3 @@ class Maze:
                 reduced_map.append(block)
 
         return reduced_map
-
-# if __name__ == "__main__":
-#     m = Maze(12, 12, 'west')
-#     m.generate_maze()
-#     m.render()

@@ -1,6 +1,7 @@
 import sys
-from colorama import init, Fore, ansi
 import numpy as np
+
+# required for non-truncated map print
 np.set_printoptions(threshold=sys.maxsize)
 
 
@@ -39,39 +40,23 @@ class Navigation:
         Displays the map as the Robo updates it.
         :return: None
         """
-        mapShow = self.map.copy()
-        mapShow[self.currY, self.currX] = 4
+        map_show = self.map.copy()
+        map_show[self.currY, self.currX] = 4        
+        print(map_show)
 
-        # for col in range(self.h):
-        #     for row in range(self.w):
-        #         if (mapShow[col,row] == 1):
-        #             print(Fore.WHITE, f'{mapShow[col,row]}' + ' ', end='')
-        #         elif (mapShow[col,row] == 3):
-        #             print(Fore.RED, f'{mapShow[col,row]}' + ' ', end='')
-        #         elif (mapShow[col,row] == 2):
-        #             print(Fore.YELLOW, f'{mapShow[col,row]}' + ' ', end='')
-        #         elif (mapShow[col,row] == 0):
-        #             print(Fore.BLACK, f'{mapShow[col,row]}' + ' ', end='')
-        #         elif (mapShow[col,row] == 4):
-        #             print(Fore.GREEN, f'{mapShow[col,row]}' + ' ', end='')
-        #     print()
-        # print(ansi.Style.RESET_ALL)
-        print(mapShow)
-
-    def getnextPos(self, proxyData):
+    def getnextPos(self, proxy_data):
         """
-        pases proxyData to update map then
+        pases proxy_data to update map then
         uses wallflower algorithm to determine next set of moves
-        :param:     proxyData = data from surrounding blocks (defined in greater detail on line 141 for __updateMap() )
+        :param:     proxy_data = data from surrounding blocks (defined in greater detail on line 141 for __update_map() )
         :return:    moves = list of next moves for robot
                                 R = pivot right
                                 L = pivot left
                                 F = move forward
                                 C = capture vision sensor & check for pants
         """
-
         # 1st update map based on new data
-        self.__updateMap(proxyData)
+        self.__update_map(proxy_data)
 
         # 2nd wall flower maze exploring algorthm:
         if self.map[self.currY + self.directions[self.dirs[self.orientation] - 1][0],
@@ -102,7 +87,7 @@ class Navigation:
             self.map[self.currY, self.currX] = 3
             return ['L', 'L', 'C', 'F']
 
-    def goToExit(self):
+    def go_to_exit(self):
         """
         uses depth first search to find shortest route to exit
         :return:    moves = list of next moves for robot
@@ -119,23 +104,23 @@ class Navigation:
         while True:
             while len(ys) > 0:
                 cur = (ys.pop(), xs.pop())
-                for d, m in enumerate(self.__getMapOffsets()):
+                for d, m in enumerate(self.__get_map_offsets()):
                     if (m[cur[0], cur[1]] > 1) and (
                             not visited[cur[0] + self.directions[d][0], cur[1] + self.directions[d][1]]):
                         options[cur[0] + self.directions[d][0], cur[1] + self.directions[d][1]] = distance
                         visited[cur[0] + self.directions[d][0], cur[1] + self.directions[d][1]] = True
                         if (cur[0] + self.directions[d][0] == self.exitY) and (
                                 cur[1] + self.directions[d][1] == self.exitX):
-                            return self.__convertToPathEXIT(options)
+                            return self.__convert_to_path_exit(options)
             yTemp, xTemp = np.where(options == distance)
             ys += yTemp.tolist()
             xs += xTemp.tolist()
             distance += 1
 
-    def __updateMap(self, proxyData):
+    def __update_map(self, proxy_data):
         """
         updates map based on proxy sensors
-        :param:     proxyData = data from surrounding blocks [Left, Center, Right]
+        :param:     proxy_data = data from surrounding blocks [Left, Center, Right]
                                 0 = wall right next to robot
                                 None = no wall next to robot
         :return:    moves = list of next moves for robot
@@ -145,7 +130,7 @@ class Navigation:
                                 C = capture vision sensor & check for pants
         """
         # Left Sensor:
-        if proxyData[0] == 0:
+        if proxy_data[0] == 0:
             if self.orientation == 1:
                 self.map[self.currY - 1, self.currX] = 1
             elif self.orientation == 3:
@@ -154,7 +139,7 @@ class Navigation:
                 self.map[self.currY, self.currX + 1] = 1
             elif self.orientation == 0:
                 self.map[self.currY, self.currX - 1] = 1
-        elif proxyData[0] == None:
+        elif proxy_data[0] is None:
             if self.orientation == 1:
                 if self.map[self.currY - 1, self.currX] != 3:
                     self.map[self.currY - 1, self.currX] = 2
@@ -169,7 +154,7 @@ class Navigation:
                     self.map[self.currY, self.currX - 1] = 2
 
         # Center Sensor: (it has vision so it will fully see the block)
-        if proxyData[1] == 0:
+        if proxy_data[1] == 0:
             if self.orientation == 1:
                 self.map[self.currY, self.currX + 1] = 1
             elif self.orientation == 3:
@@ -178,7 +163,7 @@ class Navigation:
                 self.map[self.currY + 1, self.currX] = 1
             elif self.orientation == 0:
                 self.map[self.currY - 1, self.currX] = 1
-        elif proxyData[1] == None:
+        elif proxy_data[1] is None:
             if self.orientation == 1:
                 self.map[self.currY, self.currX + 1] = 3
             elif self.orientation == 3:
@@ -189,7 +174,7 @@ class Navigation:
                 self.map[self.currY - 1, self.currX] = 3
 
         # Right Sensor:
-        if proxyData[2] == 0:
+        if proxy_data[2] == 0:
             if self.orientation == 1:
                 self.map[self.currY + 1, self.currX] = 1
             elif self.orientation == 3:
@@ -198,7 +183,7 @@ class Navigation:
                 self.map[self.currY, self.currX - 1] = 1
             elif self.orientation == 0:
                 self.map[self.currY, self.currX + 1] = 1
-        elif proxyData[2] == None:
+        elif proxy_data[2] is None:
             if self.orientation == 1:
                 if self.map[self.currY + 1, self.currX] != 3:
                     self.map[self.currY + 1, self.currX] = 2
@@ -212,7 +197,7 @@ class Navigation:
                 if self.map[self.currY, self.currX + 1] != 3:
                     self.map[self.currY, self.currX + 1] = 2
 
-    def __convertToTurn(self, dir):
+    def __convert_to_turn(self, dir):
         """
         converts direction of next block to go to, into robot moves. based on robots current orientation
         :param:     dir = direction of next block to move to
@@ -275,7 +260,7 @@ class Navigation:
                 self.orientation = 3
                 return ['L']
 
-    def __getMapOffsets(self):
+    def __get_map_offsets(self):
         """
         return extra maps (using same mem location) for more efficient comparisons between neighboring cells
         :param:     dir = direction of next block to move to
@@ -305,7 +290,7 @@ class Navigation:
         map_left[:, 0] = 1
         return map_up, map_right, map_down, map_left
 
-    def __convertToPathEXIT(self, options):
+    def __convert_to_path_exit(self, options):
         """
         once depth first search has found the exit, this will convert the matrix to a single path
                                                                       & return as robot functions
@@ -330,5 +315,5 @@ class Navigation:
             if (cur[0] == self.currY) and (cur[1] == self.currX):
                 moves = []
                 while len(dirs) > 0:
-                    moves += self.__convertToTurn(self.dirs[dirs.pop() + 2]) + ['F']
+                    moves += self.__convert_to_turn(self.dirs[dirs.pop() + 2]) + ['F']
                 return moves

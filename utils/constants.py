@@ -1,3 +1,7 @@
+"""
+Constant definitions.
+"""
+
 import math
 
 # orientation constants

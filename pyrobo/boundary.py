@@ -1,14 +1,6 @@
-"""
-Class to handle direct communication with CoppeliaSim using the RemoteAPI.
-  - Contains some low-level getters and setters for CoppeliaSim scene object
-    attributes.
-  - Also contains some higher-level functions to perform an entire routine,
-    like step the Robo forward one block.
-"""
 import math
 import time
 import numpy as np
-import matplotlib as mpl
 
 import sim_lib.sim as sim
 import sim_lib.simConst as sC
@@ -17,7 +9,18 @@ import utils.vec as vec
 
 
 class Boundary(object):
+    """Class to handle direct communication with CoppeliaSim using the RemoteAPI.
+      - Contains some low-level getters and setters for CoppeliaSim scene object attributes.
+      - Also contains some higher-level functions to perform an entire routine, like step the Robo forward one block.
+    """
+
     def __init__(self, port):
+        """Initialize self.
+
+        :param port: The port value set in CoppeliaSim.
+        :type port: int
+        """
+
         # connect to CoppeliaSim
         sim.simxFinish(-1)  # just in case, close all opened connections
         self.__port = port
@@ -32,12 +35,13 @@ class Boundary(object):
         self.__scene_objects, self.__proxies = self.__get_scene_objects_dict()
 
     def snap_to_angular_point(self, velocity, angular_point):
-        """
-        Function that handles all of the details relating to snapping the Robo's front
-        to the specified angular point.
+        """Function that handles all of the details relating to snapping the Robo's front to the specified angular
+        point.
 
-        :param velocity: float -> velocity to turn at; will actually turn at twice this value.
-        :param angular_point: float -> angular point, probably as defined in constants.py.
+        :param velocity: Velocity to turn at; will actually turn at twice this value.
+        :type velocity: float
+        :param angular_point: Angular point, probably as defined in constants.py.
+        :type angular_point: float
         :return: None
         """
         object_name = "body"
@@ -68,12 +72,12 @@ class Boundary(object):
         self.set_right_motor_velocity(0)
 
     def step_forward(self, velocity, angular_point):
-        """
-        Handles all of the details for moving forward a specified number
-        of steps (blocks).
+        """Handles all of the details for moving forward a specified number of steps (blocks).
 
-        :param velocity: float -> velocity to move forward at.
-        :param angular_point: float -> the heading.
+        :param velocity: Velocity to move forward at.
+        :type velocity: float
+        :param angular_point: The heading.
+        :type angular_point: float
         :return: None
         """
         object_name = "body"
@@ -143,13 +147,12 @@ class Boundary(object):
         self.set_right_motor_velocity(0)
 
     def course_correct_factors(self):
-        """
-        Function to determine what factors to scale each wheel velocity
-        by depending on the distance the robo is from each wall. For
-        example: if the robo is < 0.175 away from the right wall, left
-        wheel velocity will be factored down.
+        """Function to determine what factors to scale each wheel velocity by depending on the distance the Robo is from
+        each wall. For example: if the robo is < 0.175 away from the right wall, left wheel velocity will be factored
+        down.
 
-        :return: float, float -> left and right velocity coefficients.
+        :return: Left and right velocity coefficients.
+        :rtype: tuple(float, float)
         """
         left_name = "left_proxie"
         right_name = "right_proxie"
@@ -160,8 +163,6 @@ class Boundary(object):
         left_reading = self.get_proxie(left_name)
         right_reading = self.get_proxie(right_name)
 
-        # TODO : Add case for when only one sensor is detecting. This will
-        #        make the robot enter and exit intersections straighter.
         if left_reading is not None:
             if 0.2 > left_reading > 0.175:
                 right_factor = 0.975
@@ -183,10 +184,10 @@ class Boundary(object):
 
     def override_step_forward(self):
         """
-        Function that returns True or False depending on whether
-        there is a wall < 0.15 in front of the Robo.
+        Function that returns True or False depending on whether there is a wall < 0.15 in front of the Robo.
 
-        :return: bool -> is there a wall < 0.15 in front?
+        :return: Is there a wall < 0.15 in front?
+        :rtype: bool
         """
         proxie_name = "front_proxie"
 
@@ -201,10 +202,10 @@ class Boundary(object):
             return False
 
     def get_vision(self, object_id):
-        """
-        Function that returns True or False depending on the color it sees.
+        """Function that returns True or False depending on the color it sees.
 
-        :return: True if color matches (blue jeans), else return False
+        :return: True if color matches (blue jeans), else return False.
+        :rtype: bool
         """
         # Get the handle of vision sensor
         err, vsh = sim.simxGetObjectHandle(self.__clientID, object_id, sC.simx_opmode_oneshot_wait)
@@ -237,11 +238,12 @@ class Boundary(object):
             return False
 
     def get_orientation(self, object_name):
-        """
-        Get the orientation of the specified object.
+        """Get the orientation of the specified object.
 
-        :param object_name: str -> the object to get.
-        :return: float -> the euler angle g representing the object's orientation.
+        :param object_name: Name of the object to get.
+        :type object_name: str
+        :return: The euler angle g representing the object's orientation.
+        :rtype: float
         """
         if object_name not in self.__scene_objects:
             return None
@@ -252,11 +254,12 @@ class Boundary(object):
                                             -1, sC.simx_opmode_blocking)[1]
 
     def get_position(self, object_name):
-        """
-        Get the position of the specified object.
+        """Get the position of the specified object.
 
-        :param object_name: str -> the object to get.
-        :return: list() -> absolute [x, y, z] coordinates of the object.
+        :param object_name: Name of the object to get.
+        :type object_name: str
+        :return: Absolute [x, y, z] coordinates of the object.
+        :rtype: list(float)
         """
         if object_name not in self.__scene_objects:
             return None
@@ -267,11 +270,12 @@ class Boundary(object):
                                          -1, sC.simx_opmode_blocking)[1]
 
     def get_proxie(self, proxie_name):
-        """
-        Get the distance reading for the specified proxie name.
+        """Get the distance reading for the specified proxie name.
 
-        :param proxie_name: str -> the proxie name.
-        :return: float/None -> the distance reading/the proxie is not detecting.
+        :param proxie_name: The proxie name.
+        :type proxie_name: str
+        :return: The distance reading/the proxie is not detecting. None if not detecting.
+        :rtype: float/None
         """
 
         if proxie_name not in self.__proxies:
@@ -279,12 +283,11 @@ class Boundary(object):
 
         handle = self.__proxies[proxie_name]
 
-        #  TODO : FAKE NEWS.
         """
-        A list that contains:
+        A list that contains (NOTE: THE COPPELIA DOCS LIE!):
         item1 (bool): Whether the function was successfully called on the server side
         item2 (number): detection state (0 or 1)
-        item3 (number): The distance to the detected point
+        item3 (number): The distance to the detected point --X--> list()
         item4 (list): The detected point relative to the sensor frame
         item5 (number): The detected object handle
         item6 (list): The normal vector of the detected surface, relative to the sensor frame
@@ -299,10 +302,10 @@ class Boundary(object):
             return None
 
     def set_left_motor_velocity(self, velocity):
-        """
-        Set the left motor to the specified velocity.
+        """Set the left motor to the specified velocity.
 
-        :param velocity: float -> velocity to set the motor to.
+        :param velocity: Velocity to set the motor to.
+        :type velocity: float
         :return: None
         """
         handle = self.__scene_objects["left_motor"]
@@ -310,10 +313,10 @@ class Boundary(object):
                                        velocity, sC.simx_opmode_oneshot)
 
     def set_right_motor_velocity(self, velocity):
-        """
-        Set the right motor to the specified velocity.
+        """Set the right motor to the specified velocity.
 
-        :param velocity: float -> velocity to set the motor to.
+        :param velocity: Velocity to set the motor to.
+        :type velocity: float
         :return: None
         """
         handle = self.__scene_objects["right_motor"]
@@ -321,10 +324,10 @@ class Boundary(object):
                                        velocity, sC.simx_opmode_oneshot)
 
     def raise_arm_left_step(self, step):
-        """
-        Sets the target position of the left joint to its current position plus the step.
+        """Sets the target position of the left joint to its current position plus the step.
 
-        :param step: int -> distance to move from current position.
+        :param step: Distance to move from current position.
+        :type step: int
         :return: None
         """
         handle = self.__scene_objects["arm_joint_left"]
@@ -336,10 +339,10 @@ class Boundary(object):
                                        current_position + step_rad, sC.simx_opmode_oneshot)
 
     def raise_arm_right_step(self, step):
-        """
-        Sets the target position of the right joint to its current position plus the step.
+        """Sets the target position of the right joint to its current position plus the step.
 
-        :param step: int -> distance to move from current position.
+        :param step: Distance to move from current position.
+        :type step: int
         :return: None
         """
         handle = self.__scene_objects["arm_joint_right"]
@@ -351,10 +354,10 @@ class Boundary(object):
                                        current_position + step_rad, sC.simx_opmode_oneshot)
 
     def lower_arm_left_step(self, step):
-        """
-        Sets the target position of the left joint to its current position minus the step.
+        """Sets the target position of the left joint to its current position minus the step.
 
-        :param step: int -> distance to move from current position.
+        :param step: Distance to move from current position.
+        :type step: int
         :return: None
         """
         handle = self.__scene_objects["arm_joint_left"]
@@ -366,10 +369,10 @@ class Boundary(object):
                                        current_position - step_rad, sC.simx_opmode_oneshot)
 
     def lower_arm_right_step(self, step):
-        """
-        Sets the target position of the right joint to its current position minus the step.
+        """Sets the target position of the right joint to its current position minus the step.
 
-        :param step: int -> distance to move from current position.
+        :param step: Distance to move from current position.
+        :type step: int
         :return: None
         """
         handle = self.__scene_objects["arm_joint_right"]
@@ -381,10 +384,10 @@ class Boundary(object):
                                        current_position - step_rad, sC.simx_opmode_oneshot)
 
     def set_arm_right_pos(self, position):
-        """
-        Sets the target position of the right joint to position.
+        """Sets the target position of the right joint to position.
 
-        :param position: int -> position to move arm to.
+        :param position: Position to move arm to.
+        :type position: int
         :return: None
         """
         handle = self.__scene_objects["arm_joint_right"]
@@ -393,10 +396,10 @@ class Boundary(object):
                                        position, sC.simx_opmode_oneshot)
 
     def set_arm_left_pos(self, position):
-        """
-        Sets the target position of the left joint to position.
+        """Sets the target position of the left joint to position.
 
-        :param position: int -> position to move arm to.
+        :param position: Position to move arm to.
+        :type position: int
         :return: None
         """
         handle = self.__scene_objects["arm_joint_left"]
@@ -405,11 +408,10 @@ class Boundary(object):
                                        position, sC.simx_opmode_oneshot)
 
     def generate_maze_in_coppelia(self, maze):
-        """
-        Calls a child script in CoppeliaSim. This child script places cuboids to
-        create the specified maze.
+        """Calls a child script in CoppeliaSim. This child script places cuboids to create the specified maze.
 
-        :param maze: Maze -> object representing the maze to create.
+        :param maze: Maze object representing the maze to create.
+        :type maze: class: utils.maze.Maze
         :return: None
         """
         _ = sim.simxCallScriptFunction(self.__clientID,
@@ -423,8 +425,7 @@ class Boundary(object):
                                        sC.simx_opmode_blocking)
 
     def close_sim_connection(self):
-        """
-        Function to close the sim connection.
+        """Function to close the sim connection.
 
         :return: None
         """
@@ -437,29 +438,30 @@ class Boundary(object):
         sim.simxFinish(self.__clientID)
 
     def send_msg(self, msg):
-        """
-        Print a message in the CoppeliaSim window.
+        """Print a message in the CoppeliaSim window.
 
-        :param msg: str -> the message to print.
+        :param msg: The message to print.
+        :type msg: str
         :return: None
         """
         sim.simxAddStatusbarMessage(self.__clientID, msg, sC.simx_opmode_oneshot)
 
     def __get_joint_pos(self, handle):
-        """
-        Get the position of the specified joint.
+        """Get the position of the specified joint.
 
-        :param handle: int -> the handle of the wanted joint.
-        :return: float -> the position of the joint in rad.
+        :param handle: The handle of the wanted joint.
+        :type handle: int
+        :return: The position of the joint in rad.
+        :rtype: float
         """
         return sim.simxGetJointPosition(self.__clientID, handle,
                                         sC.simx_opmode_blocking)
 
     def __get_scene_objects_dict(self):
-        """
-        Gets scene objects and maps the handle to the name.
+        """Gets scene objects and maps the handle to the name.
 
-        :return: dict -> object names mapped to integer handles.
+        :return: The objects and proxies dictionaries respectively with object names mapped to integer handles.
+        :rtype: tuple( dict(str : int), dict(str : int) )
         """
         objects_dict = {
             "arm_joint_left": sim.simxGetObjectHandle(self.__clientID, "arm_joint_left",
