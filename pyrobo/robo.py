@@ -392,8 +392,6 @@ class Robo(object):
             self.__snap_to_cardinal_point(consts.NORTH)
         elif keyboard.is_pressed("3"):
             self.__snap_to_cardinal_point(consts.WEST)
-        elif keyboard.is_pressed("m"):
-            self.__step_forward(1)
         elif keyboard.is_pressed("v"):
             self.boundary.get_vision()
         elif keyboard.is_pressed("q"):

@@ -231,8 +231,8 @@ class Boundary(object):
 
         :param object_name: Name of the object to get.
         :type object_name: str
-        :return: The euler angle g representing the object's orientation.
-        :rtype: float
+        :return: The euler angles [a, b, g]? representing the object's orientation.
+        :rtype: list(float)
         """
         if object_name not in self.__scene_objects:
             return None
