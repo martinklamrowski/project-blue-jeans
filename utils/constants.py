@@ -33,6 +33,7 @@ VELOCITY_THRESHOLD = 15
 
 # CoppeliaSim magic numbers
 BLOCK_SIZE = 0.5
+JEANS_COLOUR = [127, 250, 255]
 
 # other
 LEFT_ARM = 4

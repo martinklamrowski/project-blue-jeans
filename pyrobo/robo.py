@@ -66,7 +66,7 @@ class Robo(object):
                 # collect data:
                 proxy_data = self.__get_surroundings()
                 self.nav.display()
-                moves = self.nav.getnextPos(proxy_data)
+                moves = self.nav.get_next_pos(proxy_data)
                 # move:
                 for m in moves:
                     found_pants = self.__move(m)
@@ -75,7 +75,7 @@ class Robo(object):
                 if found_pants:
                     break
 
-            moves = self.nav.goToExit()
+            moves = self.nav.go_to_exit()
             for m in moves:
                 self.__move(m)
 
@@ -106,7 +106,7 @@ class Robo(object):
             self.__step_forward(1)
         elif move == "C":
             # pass
-            if self.boundary.get_vision("ortho"):
+            if self.boundary.get_vision():
                 self.__switch_to_manual()
                 return True
         return False
@@ -385,6 +385,8 @@ class Robo(object):
             self.__snap_to_cardinal_point(consts.WEST)
         elif keyboard.is_pressed("m"):
             self.__step_forward(1)
+        elif keyboard.is_pressed("v"):
+            self.boundary.get_vision()
         elif keyboard.is_pressed("q"):
             return True
         else:

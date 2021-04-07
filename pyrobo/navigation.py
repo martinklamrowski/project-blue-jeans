@@ -44,7 +44,7 @@ class Navigation:
         map_show[self.currY, self.currX] = 4        
         print(map_show)
 
-    def getnextPos(self, proxy_data):
+    def get_next_pos(self, proxy_data):
         """
         pases proxy_data to update map then
         uses wallflower algorithm to determine next set of moves

@@ -1,11 +1,12 @@
 import math
-import time
 import numpy as np
+import sklearn.cluster as sk_cluster
 
 import sim_lib.sim as sim
 import sim_lib.simConst as sC
 
 import utils.vec as vec
+import utils.constants as consts
 
 
 class Boundary(object):
@@ -32,7 +33,7 @@ class Boundary(object):
             """.format(port))
 
         # init robot parts
-        self.__scene_objects, self.__proxies = self.__get_scene_objects_dict()
+        self.__scene_objects, self.__sensors = self.__get_scene_objects_dict()
 
     def snap_to_angular_point(self, velocity, angular_point):
         """Function that handles all of the details relating to snapping the Robo's front to the specified angular
@@ -201,41 +202,29 @@ class Boundary(object):
         else:
             return False
 
-    def get_vision(self, object_id):
+    def get_vision(self):
         """Function that returns True or False depending on the color it sees.
 
         :return: True if color matches (blue jeans), else return False.
         :rtype: bool
         """
-        # Get the handle of vision sensor
-        err, vsh = sim.simxGetObjectHandle(self.__clientID, object_id, sC.simx_opmode_oneshot_wait)
+        # get the handle of the vision sensor
+        handle = self.__sensors["ortho_sensor"]
 
-        # Get the image of vision sensor
-        err, resolution, image = sim.simxGetVisionSensorImage(self.__clientID, vsh, 0, sC.simx_opmode_streaming)
-        time.sleep(0.1)
-        err, res, image = sim.simxGetVisionSensorImage(self.__clientID, vsh, 0, sC.simx_opmode_buffer)
+        # get image from vision sensor
+        err, res, image = sim.simxGetVisionSensorImage(self.__clientID, handle, 0, sC.simx_opmode_blocking)
 
-        # Process the image to the format (64,64,3)
-        sensorImage = []
-        sensorImage = np.array(image, dtype=np.uint8)
-        sensorImage.resize([res[0], res[1], 3])
+        # resize
+        image_vector = np.array(image, dtype=np.uint8)
+        image_vector.resize([res[0] * res[1], 3])
 
-        print(sensorImage[61][65])
-        # Use matplotlib.imshow to show the image
-        # mpl.imshow(sensorImage, origin='lower')
-        # mpl.show()
-
-        # 61 and 65 represent the x, y coordinates in the image shown
-        bleu = sensorImage[61][65]
-
-        # if the image contains blue value (255) it will be a match
-        if bleu[2] == 255:
-            print("Match")
+        percentage_blue = self.__get_blue_prominence(image_vector)
+        print(percentage_blue)
+        if percentage_blue > 0:
+            print("FOUND YA")
             return True
 
-        else:
-            print("NoMatch")
-            return False
+        return False
 
     def get_orientation(self, object_name):
         """Get the orientation of the specified object.
@@ -278,10 +267,10 @@ class Boundary(object):
         :rtype: float/None
         """
 
-        if proxie_name not in self.__proxies:
+        if proxie_name not in self.__sensors:
             return None
 
-        handle = self.__proxies[proxie_name]
+        handle = self.__sensors[proxie_name]
 
         """
         A list that contains (NOTE: THE COPPELIA DOCS LIE!):
@@ -333,7 +322,7 @@ class Boundary(object):
         handle = self.__scene_objects["arm_joint_left"]
         step_rad = -step * math.pi / 180
 
-        current_position = self.__get_joint_pos(handle)[1]
+        current_position = self.__get_joint_pos(handle)
 
         sim.simxSetJointTargetPosition(self.__clientID, handle,
                                        current_position + step_rad, sC.simx_opmode_oneshot)
@@ -348,7 +337,7 @@ class Boundary(object):
         handle = self.__scene_objects["arm_joint_right"]
         step_rad = -step * math.pi / 180
 
-        current_position = self.__get_joint_pos(handle)[1]
+        current_position = self.__get_joint_pos(handle)
 
         sim.simxSetJointTargetPosition(self.__clientID, handle,
                                        current_position + step_rad, sC.simx_opmode_oneshot)
@@ -363,7 +352,7 @@ class Boundary(object):
         handle = self.__scene_objects["arm_joint_left"]
         step_rad = -step * math.pi / 180
 
-        current_position = self.__get_joint_pos(handle)[1]
+        current_position = self.__get_joint_pos(handle)
 
         sim.simxSetJointTargetPosition(self.__clientID, handle,
                                        current_position - step_rad, sC.simx_opmode_oneshot)
@@ -378,7 +367,7 @@ class Boundary(object):
         handle = self.__scene_objects["arm_joint_right"]
         step_rad = -step * math.pi / 180
 
-        current_position = self.__get_joint_pos(handle)[1]
+        current_position = self.__get_joint_pos(handle)
 
         sim.simxSetJointTargetPosition(self.__clientID, handle,
                                        current_position - step_rad, sC.simx_opmode_oneshot)
@@ -419,7 +408,7 @@ class Boundary(object):
                                        sC.sim_scripttype_childscript,
                                        "render@ResizableFloor_5_25",
                                        [maze.length, maze.width],
-                                       [maze.length/2, maze.width/2],
+                                       [maze.length / 2, maze.width / 2],
                                        maze.reduce(),
                                        bytearray(),
                                        sC.simx_opmode_blocking)
@@ -446,6 +435,27 @@ class Boundary(object):
         """
         sim.simxAddStatusbarMessage(self.__clientID, msg, sC.simx_opmode_oneshot)
 
+    def __get_blue_prominence(self, image_vector):
+
+        estimator = sk_cluster.KMeans(n_clusters=2).fit(image_vector)
+        cluster = estimator.labels_
+        labels = estimator.cluster_centers_
+
+        # get frequency of each label
+        hist, _ = np.histogram(cluster, bins=np.arange(0, len(np.unique(cluster)) + 1))
+        hist = hist.astype("float")
+        hist /= hist.sum()
+
+        percentage_blue = 0
+        print(estimator.cluster_centers_)
+        for p, label in zip(hist, labels):
+            print((p, label.astype("uint8").tolist()))
+
+            if vec.is_similar_colour(label.astype("uint8").tolist(), consts.JEANS_COLOUR):
+                percentage_blue = p
+
+        return percentage_blue
+
     def __get_joint_pos(self, handle):
         """Get the position of the specified joint.
 
@@ -455,7 +465,7 @@ class Boundary(object):
         :rtype: float
         """
         return sim.simxGetJointPosition(self.__clientID, handle,
-                                        sC.simx_opmode_blocking)
+                                        sC.simx_opmode_blocking)[1]
 
     def __get_scene_objects_dict(self):
         """Gets scene objects and maps the handle to the name.
@@ -476,12 +486,14 @@ class Boundary(object):
                                             sC.simx_opmode_blocking)[1]
         }
 
-        proxies_dict = {
+        sensors_dict = {
             "left_proxie": sim.simxGetObjectHandle(self.__clientID, "left_proxie",
                                                    sC.simx_opmode_blocking)[1],
             "front_proxie": sim.simxGetObjectHandle(self.__clientID, "front_proxie",
                                                     sC.simx_opmode_blocking)[1],
             "right_proxie": sim.simxGetObjectHandle(self.__clientID, "right_proxie",
+                                                    sC.simx_opmode_blocking)[1],
+            "ortho_sensor": sim.simxGetObjectHandle(self.__clientID, "ortho",
                                                     sC.simx_opmode_blocking)[1]
         }
-        return objects_dict, proxies_dict
+        return objects_dict, sensors_dict

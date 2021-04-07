@@ -43,3 +43,19 @@ def get_closer_rotation_direction(angular_point1, angular_point2):
     :rtype: bool
     """
     return (angular_point1 - angular_point2 + (2 * math.pi)) % (2 * math.pi) > math.pi
+
+
+def is_similar_colour(rgb1, rgb2):
+    """
+    Custom colour similarity metric. Fancy huh?
+
+    :param rgb1: A colour.
+    :type rgb1: list(int, int, int)
+    :param rgb2: Another colour.
+    :type rgb2: list(int, int, int)
+    :return:
+    """
+
+    if math.fabs(rgb1[0] - rgb2[0]) < 55 and math.fabs(rgb1[1] - rgb2[1]) < 55 and math.fabs(rgb1[2] - rgb2[2]) < 55:
+        return True
+    return False
