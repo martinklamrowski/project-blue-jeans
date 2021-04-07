@@ -62,7 +62,7 @@ class Robo(object):
         if not self.manual:
             # exploring:
             found_pants = False
-            while True:
+            while not found_pants:
                 # collect data:
                 proxy_data = self.__get_surroundings()
                 self.nav.display()
@@ -71,9 +71,8 @@ class Robo(object):
                 for m in moves:
                     found_pants = self.__move(m)
                     if found_pants:
+                        self.mode = consts.EXIT_MODE
                         break
-                if found_pants:
-                    break
 
             moves = self.nav.go_to_exit()
             for m in moves:
@@ -99,17 +98,26 @@ class Robo(object):
         if move == "L":
             snap_point = self.__get_left_cardinality()
             self.__snap_to_cardinal_point(snap_point)
+
         elif move == "R":
             snap_point = self.__get_right_cardinality()
             self.__snap_to_cardinal_point(snap_point)
+
         elif move == "F":
             self.__step_forward(1)
+
         elif move == "C":
-            # pass
-            if self.boundary.get_vision():
-                self.__switch_to_manual()
-                return True
+            pass  # holder in case we need this again
+
+        if self.__check_for_objective():
+            self.mode = consts.HOOK_MODE
+            self.__switch_to_manual()
+            return True
+
         return False
+
+    def __check_for_objective(self):
+        return self.boundary.get_vision()
 
     def __switch_to_manual(self):
         """Poll keyboard input.
@@ -118,6 +126,7 @@ class Robo(object):
         :rtype: bool
         """
         print("SWITCHING TO MANUAL REMOTE CONTROL. GODSPEED.")
+        print("PRESS 'Q' TO CEDE CONTROL -- ROBOT WILL SEARCH FOR EXIT.")
         ceded = False
         while not ceded:
             ceded = self.__poll_keyboard()
