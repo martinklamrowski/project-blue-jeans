@@ -1,6 +1,9 @@
 import math
+import time
+
 import numpy as np
 import sklearn.cluster as sk_cluster
+import cv2
 
 import sim_lib.sim as sim
 import sim_lib.simConst as sC
@@ -72,6 +75,43 @@ class Boundary(object):
         self.set_left_motor_velocity(0)
         self.set_right_motor_velocity(0)
 
+    def pan(self, amount, direction):
+        """Pan the Robot a set amount in a given direction.
+
+        :param amount: The amount to pan in degrees.
+        :type amount: float
+        :param direction: The direction to pan.
+        :type direction: str
+        :return: None
+        """
+        object_name = "body"
+        oriented = False
+
+        starting_orientation = vec.euler_g_to_rad(self.get_orientation(object_name)[2])
+
+        # start turning
+        if direction == "left":
+            self.set_left_motor_velocity(0.1)
+            self.set_right_motor_velocity(-0.1)
+        elif direction == "right":
+            self.set_left_motor_velocity(-0.1)
+            self.set_right_motor_velocity(0.1)
+        else:
+            raise TypeError(
+                """Give me a direction boii."""
+            )
+
+        while not oriented:
+            euler_angles = self.get_orientation(object_name)
+            g = euler_angles[2]
+
+            if math.fabs(math.fabs(vec.euler_g_to_rad(g) - starting_orientation) - (amount * math.pi/180)) < 0.01:
+                oriented = True
+
+        # stoohpe
+        self.set_left_motor_velocity(0)
+        self.set_right_motor_velocity(0)
+
     def step_forward(self, velocity, angular_point):
         """Handles all of the details for moving forward a specified number of steps (blocks).
 
@@ -117,13 +157,13 @@ class Boundary(object):
         distance = math.fabs(target_block - pos_start)
 
         # start movin'!
-        cc_factors = self.course_correct_factors()
+        cc_factors = self.__course_correct_factors()
 
         self.set_left_motor_velocity(-velocity * cc_factors[0])
         self.set_right_motor_velocity(-velocity * cc_factors[1])
 
         while not there:
-            if self.override_step_forward():
+            if self.__override_step_forward():
                 break
 
             position = self.get_position(object_name)  # [x, y, z]
@@ -138,7 +178,7 @@ class Boundary(object):
                     there = True
 
             if not there:
-                cc_factors = self.course_correct_factors()
+                cc_factors = self.__course_correct_factors()
 
                 self.set_left_motor_velocity(-velocity * cc_factors[0])
                 self.set_right_motor_velocity(-velocity * cc_factors[1])
@@ -147,75 +187,103 @@ class Boundary(object):
         self.set_left_motor_velocity(0)
         self.set_right_motor_velocity(0)
 
-    def course_correct_factors(self):
-        """Function to determine what factors to scale each wheel velocity by depending on the distance the Robo is from
-        each wall. For example: if the robo is < 0.175 away from the right wall, left wheel velocity will be factored
-        down.
+    def prong_it(self):
+        """Function to move the Robot into pronging distance of the objective.
 
-        :return: Left and right velocity coefficients.
-        :rtype: tuple(float, float)
+        :return: The number of smidge moves made.
+        :rtype: int
         """
-        left_name = "left_proxie"
-        right_name = "right_proxie"
+        close_enough = False
+        count = 0
+        while not close_enough:
+            distance = self.get_proxie("front_proxie")
 
-        left_factor = 1
-        right_factor = 1
+            if distance < 0.11:
+                close_enough = True
+            else:
+                count += 1
+                self.__smidge_move(-3)
+                self.align_objective()
+        return count
 
-        left_reading = self.get_proxie(left_name)
-        right_reading = self.get_proxie(right_name)
+    def back_to_position_before_prong_it(self, count):
+        """Nudges the Robot <count> times; back to its original position.
 
-        if left_reading is not None:
-            if 0.2 > left_reading > 0.175:
-                right_factor = 0.975
-            elif 0.175 >= left_reading > 0.1:
-                right_factor = 0.925
-            elif left_reading <= 0.1:
-                right_factor = 0.85
-
-        # only set left_factor if right_factor hasn't been modified
-        if right_reading is not None and right_factor > 0.175:
-            if 0.2 > right_reading > 0.175:
-                left_factor = 0.975
-            elif 0.175 >= right_reading > 0.1:
-                left_factor = 0.925
-            elif right_reading <= 0.1:
-                left_factor = 0.85
-
-        return left_factor, right_factor
-
-    def override_step_forward(self):
+        :param count: Number of smidge moves to make.
+        :type count: int
+        :return: None
         """
-        Function that returns True or False depending on whether there is a wall < 0.15 in front of the Robo.
+        self.__smidge_move(-3, count)
 
-        :return: Is there a wall < 0.15 in front?
+    def align_objective(self):
+        """Aligns the Robot's view with the view markers on the objective.
+
+        :return:
+        """
+
+        aligned = False
+
+        while not aligned:
+            image_vector_cv, res = self.get_vision("ortho_sensor")
+            image_vector_cv.resize(res[0], res[1], 3)
+
+            # hsv because that's how we can discretize numerical colour values into human understandable colours!
+            hsv = cv2.cvtColor(image_vector_cv, cv2.COLOR_RGB2HSV)
+
+            # make it bigger; seems to do better
+            resized = cv2.resize(hsv, (int(res[1] * 2), int(res[0] * 2)), interpolation=cv2.INTER_AREA)
+
+            # this is a mask -- a mask is like a filter
+            # we filter (ignore) anything that isn't red
+            mask = cv2.inRange(resized, consts.RED_COLOUR_LOWER, consts.RED_COLOUR_UPPER)
+
+            # ouuu fancy cv2 algorithm for colour segmentation
+            output = cv2.connectedComponentsWithStats(mask, 4, cv2.CV_32S)
+            points = output[3][1:]
+
+            # first thing to check is that there are 4 points :)
+            if len(points) == 4:
+                left_most_points = (points[0], points[2])
+                right_most_points = (points[1], points[3])
+
+                # now let's check where in the frame those points are
+                # perfect alignment is if (x1 + x2)/2 == center
+                print((left_most_points[0][0] + right_most_points[0][0]) / 2)
+                print(res[0])
+
+                deviance = ((left_most_points[0][0] + right_most_points[0][0]) / 2) - res[0]
+                print(deviance)
+                if -10 <= deviance <= 10:
+                    x_sep = math.fabs(left_most_points[0][0] - right_most_points[0][0])
+                    aligned = True
+                elif deviance < -10:
+                    self.pan(2, "left")
+                else:
+                    self.pan(2, "right")
+
+            elif len(points) == 2:
+                # now check which direction to pan
+                if points[0][0] < res[0]:  # note: we scaled by 200% so res is not halved
+                    # pan left
+                    self.pan(3, "left")
+                elif points[0][0] >= res[0]:
+                    # pan right
+                    self.pan(3, "right")
+            else:
+                print("CANNOT ALIGN. PLEASE ASSUME CONTROL OR ABORT.")
+                break
+
+            if aligned:
+                return True
+        return False
+
+    def is_objective_visible(self):
+        """Function to determine if the objective is visible. Takes image and computes the blue content.
+
+        :return: True if the image has blue content, False otherwise.
         :rtype: bool
         """
-        proxie_name = "front_proxie"
-
-        distance_reading = self.get_proxie(proxie_name)
-
-        if distance_reading is None:
-            return False
-
-        elif distance_reading < 0.25:
-            return True
-        else:
-            return False
-
-    def get_vision(self):
-        """Function that returns True or False depending on the color it sees.
-
-        :return: True if color matches (blue jeans), else return False.
-        :rtype: bool
-        """
-        # get the handle of the vision sensor
-        handle = self.__sensors["ortho_sensor"]
-
-        # get image from vision sensor
-        err, res, image = sim.simxGetVisionSensorImage(self.__clientID, handle, 0, sC.simx_opmode_blocking)
-
-        # resize
-        image_vector = np.array(image, dtype=np.uint8)
+        image_vector, res = self.get_vision("ortho_sensor")
         image_vector.resize([res[0] * res[1], 3])
 
         percentage_blue = self.__get_blue_prominence(image_vector)
@@ -225,6 +293,21 @@ class Boundary(object):
             return True
 
         return False
+
+    def get_vision(self, object_name):
+        """Function that returns an image vector of what the specified sensor sees.
+
+        :return: Image vector and resolution.
+        :rtype: tuple(class: numpy.array, tuple(int, int))
+        """
+        # get the handle of the vision sensor
+        handle = self.__sensors[object_name]
+
+        # get image from vision sensor
+        err, res, image = sim.simxGetVisionSensorImage(self.__clientID, handle, 0, sC.simx_opmode_blocking)
+        image_vector = np.array(image, dtype=np.uint8)
+
+        return image_vector, (res[0], res[1])
 
     def get_orientation(self, object_name):
         """Get the orientation of the specified object.
@@ -413,7 +496,7 @@ class Boundary(object):
                                        bytearray(),
                                        sC.simx_opmode_blocking)
 
-    def close_sim_connection(self):
+    def __close_sim_connection(self):
         """Function to close the sim connection.
 
         :return: None
@@ -426,7 +509,7 @@ class Boundary(object):
         # close the connection to CoppeliaSim
         sim.simxFinish(self.__clientID)
 
-    def send_msg(self, msg):
+    def __send_msg(self, msg):
         """Print a message in the CoppeliaSim window.
 
         :param msg: The message to print.
@@ -434,27 +517,115 @@ class Boundary(object):
         :return: None
         """
         sim.simxAddStatusbarMessage(self.__clientID, msg, sC.simx_opmode_oneshot)
+        
+    def __course_correct_factors(self):
+        """Function to determine what factors to scale each wheel velocity by depending on the distance the Robo is from
+        each wall. For example: if the robo is < 0.175 away from the right wall, left wheel velocity will be factored
+        down.
+
+        :return: Left and right velocity coefficients.
+        :rtype: tuple(float, float)
+        """
+        left_name = "left_proxie"
+        right_name = "right_proxie"
+
+        left_factor = 1
+        right_factor = 1
+
+        left_reading = self.get_proxie(left_name)
+        right_reading = self.get_proxie(right_name)
+
+        if left_reading is not None:
+            if 0.2 > left_reading > 0.175:
+                right_factor = 0.975
+            elif 0.175 >= left_reading > 0.1:
+                right_factor = 0.925
+            elif left_reading <= 0.1:
+                right_factor = 0.85
+
+        # only set left_factor if right_factor hasn't been modified
+        if right_reading is not None and right_factor > 0.175:
+            if 0.2 > right_reading > 0.175:
+                left_factor = 0.975
+            elif 0.175 >= right_reading > 0.1:
+                left_factor = 0.925
+            elif right_reading <= 0.1:
+                left_factor = 0.85
+
+        return left_factor, right_factor
 
     def __get_blue_prominence(self, image_vector):
+        """Get the percentage taken up by blue in the image.
 
-        estimator = sk_cluster.KMeans(n_clusters=2).fit(image_vector)
-        cluster = estimator.labels_
+        :param image_vector: The image vector.
+        :type image_vector: class: numpy.array
+        :return: The percentage of the image that is blue (according to kmeans).
+        :rtype: float
+        """
+        # kmeans can do this! pixels are classified according to their distance from the determined centroids
+        estimator = sk_cluster.KMeans(n_clusters=3).fit(image_vector)
+        cluster = estimator.labels_  # 0-2
+
+        # each centroid is a prominent colour
         labels = estimator.cluster_centers_
 
-        # get frequency of each label
+        # get frequency of each label (colour)
         hist, _ = np.histogram(cluster, bins=np.arange(0, len(np.unique(cluster)) + 1))
         hist = hist.astype("float")
+
+        # normalize
         hist /= hist.sum()
 
         percentage_blue = 0
-        print(estimator.cluster_centers_)
         for p, label in zip(hist, labels):
-            print((p, label.astype("uint8").tolist()))
-
-            if vec.is_similar_colour(label.astype("uint8").tolist(), consts.JEANS_COLOUR):
+            if vec.is_similar_colour(label.astype("uint8").tolist(), consts.JEANS_COLOUR_LOWER):
                 percentage_blue = p
 
         return percentage_blue
+    
+    def __override_step_forward(self):
+        """
+        Function that returns True or False depending on whether there is a wall < 0.25 in front of the Robo.
+
+        :return: Is there a wall < 0.25 in front?
+        :rtype: bool
+        """
+        proxie_name = "front_proxie"
+
+        distance_reading = self.get_proxie(proxie_name)
+
+        if distance_reading is None:
+            return False
+
+        elif distance_reading < 0.25:
+            return True
+        else:
+            return False
+
+    def __smidge_move(self, velocity, count=None):
+        """Nudges the Robo forward...just a smidge.
+
+        :param velocity: Nudge size.
+        :type velocity: float
+        :param count: Amount of nudges.
+        :type count: int/None
+        :return: None
+        """
+        if count is None:
+            self.set_left_motor_velocity(velocity)
+            self.set_right_motor_velocity(velocity)
+            time.sleep(0.05)
+            self.set_left_motor_velocity(0)
+            self.set_right_motor_velocity(0)
+        else:
+            for _ in range(count):
+                if self.__override_step_forward():
+                    break
+                self.set_left_motor_velocity(velocity)
+                self.set_right_motor_velocity(velocity)
+                time.sleep(0.05)
+                self.set_left_motor_velocity(0)
+                self.set_right_motor_velocity(0)
 
     def __get_joint_pos(self, handle):
         """Get the position of the specified joint.

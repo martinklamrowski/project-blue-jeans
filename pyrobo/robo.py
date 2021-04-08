@@ -1,4 +1,6 @@
 import math
+import time
+
 import keyboard
 
 import utils.constants as consts
@@ -109,15 +111,43 @@ class Robo(object):
         elif move == "C":
             pass  # holder in case we need this again
 
-        if self.__check_for_objective():
-            self.mode = consts.HOOK_MODE
-            self.__switch_to_manual()
-            return True
+        if self.mode != consts.EXIT_MODE:
+            if self.__check_for_objective():
+                self.mode = consts.HOOK_MODE
+                if self.__check_objective_alignment():
+                    # objective is aligned
+                    self.__prong_it()
+                else:
+                    self.__switch_to_manual()
+                return True
 
         return False
 
+    def __prong_it(self):
+        """Short function for the prong subroutine.
+
+        :return: None
+        """
+
+        self.__lower_arms()
+        self.boundary.prong_it()
+        self.__reset_arms()
+
     def __check_for_objective(self):
-        return self.boundary.get_vision()
+        """Can the Robot see the objective?
+
+        :return: Read above.
+        :rtype: bool
+        """
+        return self.boundary.is_objective_visible()
+
+    def __check_objective_alignment(self):
+        """Is the Robot aligned with the objective?
+
+        :return: Read above.
+        :rtype: bool
+        """
+        return self.boundary.align_objective()
 
     def __switch_to_manual(self):
         """Poll keyboard input.
@@ -132,9 +162,22 @@ class Robo(object):
             ceded = self.__poll_keyboard()
 
     def __dance(self):
-        #  TODO : :).
-        for AYO_MUTHA_LOVA in range(int(6.9)):
-            print("DANCINGGGG")
+        """Silly function to make the Robo dance...it never ends -- beware, the funk will consume you.
+
+        :return: None
+        """
+        self.boundary.set_arm_right_pos(consts.ARM_POSITION_THRESHOLD[1])
+        self.boundary.set_arm_left_pos(consts.ARM_POSITION_THRESHOLD[0])
+
+        while True:
+            self.boundary.set_left_motor_velocity(2)
+            time.sleep(0.5)
+            self.boundary.set_left_motor_velocity(-2)
+            self.boundary.set_right_motor_velocity(2)
+            self.boundary.lower_arm_left_step(consts.ARM_STEP_SIZE_DEG * 2)
+            time.sleep(0.5)
+            self.boundary.raise_arm_left_step(consts.ARM_STEP_SIZE_DEG * 2)
+            self.boundary.set_right_motor_velocity(-2)
 
     def __get_surroundings(self):
         """Function to get surroundings based on proxie readings.
@@ -392,8 +435,8 @@ class Robo(object):
             self.__snap_to_cardinal_point(consts.NORTH)
         elif keyboard.is_pressed("3"):
             self.__snap_to_cardinal_point(consts.WEST)
-        elif keyboard.is_pressed("v"):
-            self.boundary.get_vision()
+        elif keyboard.is_pressed("n"):
+            self.__dance()
         elif keyboard.is_pressed("q"):
             return True
         else:

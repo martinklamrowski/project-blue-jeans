@@ -6,11 +6,19 @@ np.set_printoptions(threshold=sys.maxsize)
 
 
 class Navigation:
+    """Maintains the Robot's view of the maze. Also contains the path finding logic."""
 
-    def __init__(self, h, w, startY=1, startX=0, orientation=1):
+    def __init__(self, h, w):
+        """Initialize self.
+
+        :param h: The length of the maze.
+        :type h: int
+        :param w: The width of the maze.
+        :type w: int
+        """
+
         self.directions = ((-1, 0), (0, 1), (1, 0), (0, -1))
         self.dirs = (0, 1, 2, 3, 0, 1, 2, 3)
-        # dir: 0 = up/North, 1 = right/East, 2 = down/South, 3 = left/West
         self.visited = np.zeros((h, w), np.bool_)
         self.map = np.zeros((h, w), np.uint8)
         """
@@ -36,8 +44,8 @@ class Navigation:
         self.map[self.currY, self.currX] = 3
 
     def display(self):
-        """
-        Displays the map as the Robo updates it.
+        """Displays the map as the Robo updates it.
+
         :return: None
         """
         map_show = self.map.copy()
@@ -45,8 +53,7 @@ class Navigation:
         print(map_show)
 
     def get_next_pos(self, proxy_data):
-        """
-        pases proxy_data to update map then
+        """passes proxy_data to update map then
         uses wallflower algorithm to determine next set of moves
         :param:     proxy_data = data from surrounding blocks (defined in greater detail on line 141 for __update_map() )
         :return:    moves = list of next moves for robot
@@ -88,8 +95,7 @@ class Navigation:
             return ['L', 'L', 'C', 'F']
 
     def go_to_exit(self):
-        """
-        uses depth first search to find shortest route to exit
+        """uses depth first search to find shortest route to exit
         :return:    moves = list of next moves for robot
                                 R = pivot right
                                 L = pivot left
@@ -118,8 +124,7 @@ class Navigation:
             distance += 1
 
     def __update_map(self, proxy_data):
-        """
-        updates map based on proxy sensors
+        """updates map based on proxy sensors
         :param:     proxy_data = data from surrounding blocks [Left, Center, Right]
                                 0 = wall right next to robot
                                 None = no wall next to robot
@@ -198,8 +203,7 @@ class Navigation:
                     self.map[self.currY, self.currX + 1] = 2
 
     def __convert_to_turn(self, dir):
-        """
-        converts direction of next block to go to, into robot moves. based on robots current orientation
+        """converts direction of next block to go to, into robot moves. based on robots current orientation
         :param:     dir = direction of next block to move to
                                 0 = up/North
                                 1 = right/East
@@ -261,8 +265,7 @@ class Navigation:
                 return ['L']
 
     def __get_map_offsets(self):
-        """
-        return extra maps (using same mem location) for more efficient comparisons between neighboring cells
+        """return extra maps (using same mem location) for more efficient comparisons between neighboring cells
         :param:     dir = direction of next block to move to
                                 0 = up/North
                                 1 = right/East
@@ -291,8 +294,7 @@ class Navigation:
         return map_up, map_right, map_down, map_left
 
     def __convert_to_path_exit(self, options):
-        """
-        once depth first search has found the exit, this will convert the matrix to a single path
+        """once depth first search has found the exit, this will convert the matrix to a single path
                                                                       & return as robot functions
         :param:     options = matrix showing results of the dapth 1st searh
         :return:    moves = list of next moves for robot

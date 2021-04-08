@@ -20,7 +20,7 @@ proposal to final product and report.
 | 5 / 5.1-5.2| Objective detecting in 180&deg; forward arc.| :heavy_check_mark: * | Field of view is 10&deg;.
 | 6 / 6.1-6.3| Autonomous movement, wall avoidance. | :heavy_check_mark: | 
 | 7 / 7.1-7.6| Autonomous navigation, autonomous path finding, position monitoring. | :heavy_check_mark: * | GPS used; absolute position of robot in maze.
-| 8 / 8.1-8.4 | Autonomous objective securing, autonomous objective transportation. | :heavy_check_mark: * | Objective must be secured manually, by a human operator.
+| 8 / 8.1-8.4 | Autonomous objective securing, autonomous objective transportation. | :heavy_check_mark: * | Objective can only be secured autonomously if it is facing the Robot. Otherwise, manual control must be assumed.
 
 | Additional Achievements | Description | Status | Notes * |
 |-----------|-----------|----------|-------|

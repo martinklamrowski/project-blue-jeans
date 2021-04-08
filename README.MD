@@ -17,13 +17,14 @@
 Note: Coppelia port set in scene is 8008.
 
 ### Package Dependencies
-
+PS: Sorry.
 ```bash
 $ pip install msgpack
 $ pip install colorama
 $ pip install keyboard
 $ pip install numpy
 $ pip install scikit-learn
+$ pip install opencv-python
 ```
 
 ### Usage
