@@ -1,23 +1,47 @@
 # PYROBO
+[![forthebadge](https://forthebadge.com/images/badges/made-with-python.svg)](https://forthebadge.com)
+[![forthebadge](https://forthebadge.com/images/badges/built-with-science.svg)](https://forthebadge.com)
+[![forthebadge](https://forthebadge.com/images/badges/not-a-bug-a-feature.svg)](https://forthebadge.com)
+
+![Python](https://img.shields.io/badge/python-v3.7+-blue.svg)
+[![CoppeliaSim](https://img.shields.io/badge/CoppeliaSim-v4.1-red.svg)](https://www.coppeliarobotics.com/helpFiles/en/versionInfo.htm#coppeliaSim4.1.0)
 ## SYSC4805 Project Code - Team Blue Jeans
 
-![an image has mysteriously gone missing, please notify the relevant authorities if you find it](https://github.com/SYSC4805-Winter-2021/project-blue-jeans/master/misc/concept.png)
+![an image has mysteriously gone missing, please notify the relevant authorities if you find it](https://github.com/SYSC4805-Winter-2021/project-blue-jeans/blob/master/misc/concept.png)
 
-【Required】
+### Required
+
  - CoppeliaSim to open the scene.
-    - Robot.ttt (use this with main)
-    - scenes/maze.ttt
- - Steps from the Lab Report that I'm too lazy to get right now. [TODO]
+    - coppelia_artifacts/maze.ttt
 
-- OR Add robot_model.ttm to scene by File -> Import Model
+Note: Coppelia port set in scene is 8008.
 
-【Usage】
+### Package Dependencies
+PS: Sorry.
 ```bash
-$ python -p <port> cuboid.py
-$ python main.py -p <port>
+$ pip install msgpack
+$ pip install colorama
+$ pip install keyboard
+$ pip install numpy
+$ pip install scikit-learn
+$ pip install opencv-python
 ```
-current Coppelia Port = 8008
 
+### Usage
 
-【Contributors】
-Angela, Tarun, Martin, Matt
+```bash
+$ git clone https://github.com/SYSC4805-Winter-2021/project-blue-jeans
+```
+
+```bash
+$ python main.py -p <port> -d <maze_length> <maze_width>
+```
+
+Example to run simulation in 18x18 maze: <code>python main.py -p 8008 -d 18 18</code>
+
+### Contributors
+
+[@Angela](https://github.com/angiebyun),
+[@Tarun](https://github.com/TarunAK),
+[@Martin](https://github.com/martinklamrowski),
+[@Matt](https://github.com/mwesleyjames)

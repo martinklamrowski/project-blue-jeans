@@ -1,91 +1,206 @@
-from utils.maze_map import MazeMap
-import utils.constants as consts
-
 import math
+import time
+
+import keyboard
+
+import utils.constants as consts
+import utils.vec as vec
 
 
 class Robo(object):
-    def __init__(self, boundary=None, testing=True):
+    """Class to model the Robo behaviour.
+
+    :param vel_x: The x-component of the Robo's velocity.
+    :type vel_x: float
+    :param vel_y: The y-component of the Robo's velocity.
+    :type vel_y: float
+    :param orientation: The cardinal heading of the Robo; defined in constants.py.
+    :type orientation: int
+    :param mode: The operation mode (subroutine) the Robo is currently operating in; defined in constants.py.
+    :type mode: int
+    :param manual: Start with manual remote control?
+    :type manual: bool
+    :param boundary: The Boundary object used to interface with CoppeliaSim.
+    :type boundary: class: pyrobo.boundary.Boundary
+    :param nav: The Navigation object the Robo uses to monitor the state of the maze.
+    :type nav: class: pyrobo.navigation.Navigation
+    """
+
+    def __init__(self, boundary=None, nav=None, manual=False):
+        """Initialize self."""
         print("Well hello there.")
 
-        # if you don't want to use Coppelia
-        self.testing = testing
-
-        # the Robo's internal map of the maze; will be updated as it moves along
-        self.maze_map = MazeMap(10, 10, True)
-
-        # the Robo's perceived position and orientation within the maze_map,
-        # starts at 0, 0 (top left corner)
-        self.pos_i = 0
-        self.pos_j = 0
         self.vel_x = 0
         self.vel_y = 0
-        self.orientation = consts.EAST          # TODO : Change this to deg or rad.
+        self.orientation = consts.EAST
         self.mode = consts.EXPLORATION_MODE
+        self.manual = manual
 
         # interface with Coppelia
-        # TODO: Remove testing argument.
-        if boundary is None and not testing:
+        if boundary is None:
             raise TypeError("""
                 Sorry, Robo needs a Boundary object; you haven't supplied one.\n
-                __init__(self, boundary) : boundary == None
+                __init__(self, boundary, nav, manual) : boundary == None
             """)
         self.boundary = boundary
 
-    def print_map(self):
-        """
-        Prints the maze map as the Robo currently knows it.
+        # Robo's nav object
+        if nav is None:
+            raise TypeError("""
+                Sorry, Robo needs a Navigation object; you haven't supplied one.\n
+                __init__(self, boundary, nav, manual) : nav == None
+            """)
+        self.nav = nav
+
+    def run(self):
+        """The control loop for the Robo. Call this function to make him
+        go!
 
         :return: None
         """
-        print(self.maze_map)
+        # get those noodles up!
+        self.__reset_arms()
 
-    def move_to_next(self, testing_map=None):
+        if not self.manual:
+            # exploring:
+            found_pants = False
+            while not found_pants:
+                # collect data:
+                proxy_data = self.__get_surroundings()
+                self.nav.display()
+                moves = self.nav.get_next_pos(proxy_data)
+                # move:
+                for m in moves:
+                    found_pants = self.__move(m)
+                    if found_pants:
+                        self.mode = consts.EXIT_MODE
+                        break
+
+            moves = self.nav.go_to_exit()
+            for m in moves:
+                self.__move(m)
+
+            self.__dance()
+            self.boundary.close_sim_connection()
+
+        else:
+            quitted = False
+            while not quitted:
+                quitted = self.__poll_keyboard()
+
+    def __move(self, move):
+        """Initiate the next move for the Robo. Depending on the character supplied, the Robo will either move
+        forward or turn.
+
+        :param move: Character specifying the move to make.
+        :type move: str
+        :return: Should we exit the routine; has the Robo found the pants?.
+        :rtype: bool
         """
-        This will be the method to compute the next move for the Robo based on its current square.
-        TODO: Need sensor info from Boundary here, will emulate for now. Remove testing_map
-              eventually. Need better algorithm too, right now it just follows the left wall.
+        if move == "L":
+            snap_point = self.__get_left_cardinality()
+            self.__snap_to_cardinal_point(snap_point)
 
-        :return: None
-        """
-        if self.testing:
-            if testing_map is None:
-                raise TypeError("""
-                    You enabled testing but haven't supplied a testing_map.\n
-                    move_to_next(self, testing_map) : testing_map == None
-                """)
-            if self.mode == consts.EXPLORATION_MODE:
+        elif move == "R":
+            snap_point = self.__get_right_cardinality()
+            self.__snap_to_cardinal_point(snap_point)
 
-                current_node = testing_map.get_map_node_at_pos(self.pos_j, self.pos_i)
-                self.maze_map.set_map_node(current_node)
-                self.__update_adjacent_map_nodes(current_node)
+        elif move == "F":
+            self.__step_forward(1)
 
-                # is there a wall to the left of the Robo in its current square?
-                if current_node.walls[self.__get_left_cardinality()]:
-                    print("Found wall to the left.")
-                    if current_node.walls[self.orientation]:
-                        print("Found wall in front.")
-                        if current_node.walls[self.__get_right_cardinality()]:
-                            print("Found wall to the right.")
-                            print("Walls all around, going back.")
-                            self.__update_pos(self.__get_rear_cardinality())
-                        else:
-                            print("Walls front and left, going right.")
-                            self.__update_pos(self.__get_right_cardinality())
-                    else:
-                        print("Wall to the left only, moving forwards.")
-                        self.__update_pos(self.orientation)
+        elif move == "C":
+            pass  # holder in case we need this again
+
+        if self.mode != consts.EXIT_MODE:
+            if self.__check_for_objective():
+                self.mode = consts.HOOK_MODE
+                if self.__check_objective_alignment():
+                    # objective is aligned
+                    self.__prong_it()
                 else:
-                    print("No left wall, going left.")
-                    self.__update_pos(self.__get_left_cardinality())
+                    self.__switch_to_manual()
+                return True
 
-    # TODO: Merge these cardinality methods.
-    def __get_left_cardinality(self):
+        return False
+
+    def __prong_it(self):
+        """Short function for the prong subroutine.
+
+        :return: None
         """
-        Returns the cardinal point to the Robo's left. I.e., the true cardinal point
-        of the Robo's West.
 
-        :return: int -> representing a cardinal point from constants.py
+        self.__lower_arms()
+        self.boundary.prong_it()
+        self.__reset_arms()
+
+    def __check_for_objective(self):
+        """Can the Robot see the objective?
+
+        :return: Read above.
+        :rtype: bool
+        """
+        return self.boundary.is_objective_visible()
+
+    def __check_objective_alignment(self):
+        """Is the Robot aligned with the objective?
+
+        :return: Read above.
+        :rtype: bool
+        """
+        return self.boundary.align_objective()
+
+    def __switch_to_manual(self):
+        """Poll keyboard input.
+
+        :return: Did the user quit?
+        :rtype: bool
+        """
+        print("SWITCHING TO MANUAL REMOTE CONTROL. GODSPEED.")
+        print("PRESS 'Q' TO CEDE CONTROL -- ROBOT WILL SEARCH FOR EXIT.")
+        ceded = False
+        while not ceded:
+            ceded = self.__poll_keyboard()
+
+    def __dance(self):
+        """Silly function to make the Robo dance...it never ends -- beware, the funk will consume you.
+
+        :return: None
+        """
+        self.boundary.set_arm_right_pos(consts.ARM_POSITION_THRESHOLD[1])
+        self.boundary.set_arm_left_pos(consts.ARM_POSITION_THRESHOLD[0])
+
+        while True:
+            self.boundary.set_left_motor_velocity(2)
+            time.sleep(0.5)
+            self.boundary.set_left_motor_velocity(-2)
+            self.boundary.set_right_motor_velocity(2)
+            self.boundary.lower_arm_left_step(consts.ARM_STEP_SIZE_DEG * 2)
+            time.sleep(0.5)
+            self.boundary.raise_arm_left_step(consts.ARM_STEP_SIZE_DEG * 2)
+            self.boundary.set_right_motor_velocity(-2)
+
+    def __get_surroundings(self):
+        """Function to get surroundings based on proxie readings.
+
+        :return: Detection states of each proximity sensor.
+        :rtype: tuple()
+        """
+        left_reading = self.boundary.get_proxie(proxie_name="left_proxie")
+        front_reading = self.boundary.get_proxie(proxie_name="front_proxie")
+        right_reading = self.boundary.get_proxie(proxie_name="right_proxie")
+
+        surroundings = (
+            0 if left_reading is not None else None,
+            0 if front_reading is not None else None,
+            0 if right_reading is not None else None
+        )
+        return surroundings
+
+    def __get_left_cardinality(self):
+        """Returns the cardinal point to the Robo's left. I.e., the true cardinal point of the Robo's West.
+
+        :return: A cardinal point as defined in constants.py.
+        :rtype: int
         """
         if self.orientation == consts.NORTH:
             cardinal_point = consts.WEST
@@ -95,11 +210,11 @@ class Robo(object):
         return cardinal_point
 
     def __get_right_cardinality(self):
-        """
-        Returns the cardinal point to the Robo's right. I.e., the true cardinal point
-        of the Robo's East.
+        """Returns the cardinal point to the Robo's right. I.e., the true cardinal
+        point of the Robo's East.
 
-        :return: int -> representing a cardinal point from constants.py
+        :return: A cardinal point as defined in constants.py.
+        :rtype: int
         """
         if self.orientation == consts.WEST:
             cardinal_point = consts.NORTH
@@ -109,11 +224,11 @@ class Robo(object):
         return cardinal_point
 
     def __get_rear_cardinality(self):
-        """
-        Returns the cardinal point to the Robo's rear. I.e., the true cardinal point
-        of the Robo's South.
+        """Returns the cardinal point to the Robo's rear. I.e., the true cardinal
+        point of the Robo's South.
 
-        :return: int -> representing a cardinal point from constants.py
+        :return: A cardinal point as defined in constants.py.
+        :rtype: int
         """
         if self.orientation == consts.NORTH or self.orientation == consts.EAST:
             cardinal_point = self.orientation + 2
@@ -122,138 +237,209 @@ class Robo(object):
 
         return cardinal_point
 
-    def __update_pos(self, heading):
-        """
-        Updates the Robo's positional values and orientation based on the provided
-        cardinal point heading.
+    def __raise_arm_step(self, arm):
+        """Raise the specified arm by the constant step amount defined in
+        constants.py.
 
-        :param heading: int -> representing a cardinal point from constants.py
+        :param arm: Arm identifier as defined in constants.py.
+        :type arm: int
         :return: None
         """
-        if heading == consts.EAST:
-            self.pos_i += 1
-        elif heading == consts.SOUTH:
-            self.pos_j += 1
-        elif heading == consts.WEST:
-            self.pos_i -= 1
-        elif heading == consts.NORTH:
-            self.pos_j -= 1
-        else:
-            raise ValueError("""
-                Unknown heading provided. Please use one from constants.py.\n
-                __update_pos(self, heading) : heading == {}
-            """.format(heading))
-
-        self.orientation = heading
-
-    def __update_adjacent_map_nodes(self, map_node):
-        """
-        This method is so that print still works. Otherwise, only East and South walls
-        of visited map nodes get printed.
-
-        :param map_node: MapNode -> the node triggering the update
-        :return: None
-        """
-        if map_node.walls[consts.WEST] and map_node.i > 0:
-            # update West node's East wall
-            west_node = self.maze_map.get_map_node_at_pos(map_node.j, map_node.i - 1)
-            west_node.walls[consts.EAST] = True  # TODO: Fugly.
-
-        if map_node.walls[consts.NORTH] and map_node.j > 0:
-            # update North node's South wall
-            north_node = self.maze_map.get_map_node_at_pos(map_node.j - 1, map_node.i)
-            north_node.walls[consts.SOUTH] = True  # TODO: Fugly.
-
-    def raise_arm_step(self, arm):
         if arm == consts.LEFT_ARM:
             self.boundary.raise_arm_left_step(consts.ARM_STEP_SIZE_DEG)
         elif arm == consts.RIGHT_ARM:
             self.boundary.raise_arm_right_step(consts.ARM_STEP_SIZE_DEG)
         else:
             raise ValueError("""
-                Fuck you.
+                You gave me some whack stuff yo.
             """)
 
-    def lower_arm_step(self, arm):
+    def __lower_arm_step(self, arm):
+        """Lower the specified arm by the constant step amount defined in
+        constants.py.
+
+        :param arm: Arm identifier as defined in constants.py.
+        :type arm: int
+        :return: None
+        """
         if arm == consts.LEFT_ARM:
             self.boundary.lower_arm_left_step(consts.ARM_STEP_SIZE_DEG)
         elif arm == consts.RIGHT_ARM:
             self.boundary.lower_arm_right_step(consts.ARM_STEP_SIZE_DEG)
         else:
             raise ValueError("""
-                Fuck you.
+                You gave me some whack stuff yo.
             """)
 
-    def accelerate_forward(self, turn):
+    def __lower_arms(self):
+        """Set arms to their lowered position; defined in constants.py.
+
+        :return: None
+        """
+        self.boundary.set_arm_left_pos(consts.ARM_POSITION_THRESHOLD[0])
+        self.boundary.set_arm_right_pos(consts.ARM_POSITION_THRESHOLD[0])
+
+    def __reset_arms(self):
+        """Reset arms to their up position; defined in constants.py.
+
+        :return: None
+        """
+        self.boundary.set_arm_left_pos(consts.ARM_POSITION_THRESHOLD[1])
+        self.boundary.set_arm_right_pos(consts.ARM_POSITION_THRESHOLD[1])
+
+    def __get_vel_x(self):
+        """Get the Robo's x-component velocity.
+
+        :return: The x-component of the velocity.
+        :rtype: float
+        """
+        return self.vel_x
+
+    def __get_vel_y(self):
+        """Get the Robo's y-component velocity.
+
+        :return: The y-component of the velocity.
+        :rtype: float
+        """
+        return self.vel_y
+
+    def __snap_to_cardinal_point(self, cardinal_point):
+        """Snap the Robo to the specified cardinal point.
+
+        :param cardinal_point: The cardinal point to snap to as defined in constants.py.
+        :type cardinal_point: int
+        :return: None
+        """
+        self.boundary.snap_to_angular_point(consts.TURN_VELOCITY,
+                                            consts.ANGULAR_POINTS[cardinal_point])
+        self.orientation = cardinal_point
+
+    def __step_forward(self, num_steps):
+        """Move forward. For use when Robo is autonomous.
+
+        :param num_steps: The number of steps (blocks) to move forward.
+        :type num_steps: int
+        :return: None
+        """
+        for _ in range(num_steps):
+            self.boundary.step_forward(consts.NOMINAL_STEP_VELOCITY,
+                                       consts.ANGULAR_POINTS[self.orientation])
+
+    def __accelerate_forward(self, turn):
+        """Move forward. For use when controlling the Robo.
+
+        :param turn: Direction to turn; 'left' or 'right'.
+        :type turn: str
+        :return: None
+        """
         if math.fabs(self.vel_y - consts.ACCELERATION) > consts.VELOCITY_THRESHOLD:
             self.vel_y = -consts.VELOCITY_THRESHOLD
         else:
             self.vel_y -= consts.ACCELERATION
 
         if turn == "left":
-            # if math.fabs(self.vel_x - consts.ACCELERATION) > consts.VELOCITY_THRESHOLD:
-            #     self.vel_x = -consts.VELOCITY_THRESHOLD
-            # else:
-            #     self.vel_x -= consts.ACCELERATION
             self.vel_x = -consts.VELOCITY_THRESHOLD
-            right_wheel_comp = -self.__get_hypotenuse_component(self.vel_x, self.vel_y)
+            right_wheel_comp = -vec.get_hypotenuse(self.vel_x, self.vel_y)
             left_wheel_comp = self.vel_y
+
         elif turn == "right":
-            # if math.fabs(self.vel_x - consts.ACCELERATION) > consts.VELOCITY_THRESHOLD:
-            #     self.vel_x = -consts.VELOCITY_THRESHOLD
-            # else:
-            #     self.vel_x -= consts.ACCELERATION
             self.vel_x = -consts.VELOCITY_THRESHOLD
-            left_wheel_comp = -self.__get_hypotenuse_component(self.vel_x, self.vel_y)
             right_wheel_comp = self.vel_y
+            left_wheel_comp = -vec.get_hypotenuse(self.vel_x, self.vel_y)
+
         else:
             self.vel_x = 0
-            left_wheel_comp = self.vel_y
             right_wheel_comp = self.vel_y
+            left_wheel_comp = self.vel_y
 
         self.boundary.set_left_motor_velocity(left_wheel_comp)
         self.boundary.set_right_motor_velocity(right_wheel_comp)
 
-    def accelerate_backward(self, turn):
+    def __accelerate_backward(self, turn):
+        """Move backwards. For use when controlling the Robo.
+
+        :param turn: Direction to turn; 'left' or 'right'.
+        :type turn: str
+        :return: None
+        """
         if self.vel_y + consts.ACCELERATION > consts.VELOCITY_THRESHOLD:
             self.vel_y = consts.VELOCITY_THRESHOLD
         else:
             self.vel_y += consts.ACCELERATION
 
         if turn == "left":
-            # if math.fabs(self.vel_x - consts.ACCELERATION) > consts.VELOCITY_THRESHOLD:
-            #     self.vel_x = -consts.VELOCITY_THRESHOLD
-            # else:
-            #     self.vel_x -= consts.ACCELERATION
             self.vel_x = consts.VELOCITY_THRESHOLD
-            right_wheel_comp = self.__get_hypotenuse_component(self.vel_x, self.vel_y)
+            right_wheel_comp = vec.get_hypotenuse(self.vel_x, self.vel_y)
             left_wheel_comp = self.vel_y
+
         elif turn == "right":
-            # if math.fabs(self.vel_x - consts.ACCELERATION) > consts.VELOCITY_THRESHOLD:
-            #     self.vel_x = -consts.VELOCITY_THRESHOLD
-            # else:
-            #     self.vel_x -= consts.ACCELERATION
             self.vel_x = consts.VELOCITY_THRESHOLD
-            left_wheel_comp = self.__get_hypotenuse_component(self.vel_x, self.vel_y)
             right_wheel_comp = self.vel_y
+            left_wheel_comp = vec.get_hypotenuse(self.vel_x, self.vel_y)
+
         else:
             self.vel_x = 0
-            left_wheel_comp = self.vel_y
             right_wheel_comp = self.vel_y
+            left_wheel_comp = self.vel_y
 
         self.boundary.set_left_motor_velocity(left_wheel_comp)
         self.boundary.set_right_motor_velocity(right_wheel_comp)
 
-    def decelerate(self):
-        """
-        Function to decelerate the robo in whichever direction it is currently traveling.
+    def __decelerate(self):
+        """Function to decelerate the Robo in whichever direction it is currently traveling.
+
         :return: None
         """
-        # TODO : Using self.vel_y as speed for now.
         if self.vel_y != 0:
-            self.vel_y = self.vel_y + consts.ACCELERATION if self.vel_y < 0 else self.vel_y - consts.ACCELERATION
+            if self.vel_y < math.fabs(consts.ACCELERATION):
+                self.vel_y = 0
+            else:
+                self.vel_y = self.vel_y + consts.ACCELERATION if self.vel_y < 0 else self.vel_y - consts.ACCELERATION
         self.boundary.set_left_motor_velocity(self.vel_y)
         self.boundary.set_right_motor_velocity(self.vel_y)
 
-    def __get_hypotenuse_component(self, x, y):
-        return math.sqrt((x**2 + y**2))
+    def __poll_keyboard(self):
+        """Polls the keyboard for remote-control input. Quits if 'q' is pressed.
+
+        :return: Quit loop?
+        :rtype: bool
+        """
+        if keyboard.is_pressed("u"):
+            self.__raise_arm_step(consts.LEFT_ARM)
+        elif keyboard.is_pressed("j"):
+            self.__lower_arm_step(consts.LEFT_ARM)
+        if keyboard.is_pressed("i"):
+            self.__raise_arm_step(consts.RIGHT_ARM)
+        elif keyboard.is_pressed("k"):
+            self.__lower_arm_step(consts.RIGHT_ARM)
+
+        if keyboard.is_pressed("w"):
+            if keyboard.is_pressed("a"):
+                self.__accelerate_forward(turn="left")
+            elif keyboard.is_pressed("d"):
+                self.__accelerate_forward(turn="right")
+            else:
+                self.__accelerate_forward(turn="")
+        elif keyboard.is_pressed("s"):
+            if keyboard.is_pressed("a"):
+                self.__accelerate_backward(turn="left")
+            elif keyboard.is_pressed("d"):
+                self.__accelerate_backward(turn="right")
+            else:
+                self.__accelerate_backward(turn="")
+        elif keyboard.is_pressed("1"):
+            self.__snap_to_cardinal_point(consts.EAST)
+        elif keyboard.is_pressed("2"):
+            self.__snap_to_cardinal_point(consts.SOUTH)
+        elif keyboard.is_pressed("0"):
+            self.__snap_to_cardinal_point(consts.NORTH)
+        elif keyboard.is_pressed("3"):
+            self.__snap_to_cardinal_point(consts.WEST)
+        elif keyboard.is_pressed("n"):
+            self.__dance()
+        elif keyboard.is_pressed("q"):
+            return True
+        else:
+            self.__decelerate()
+
+        return False
