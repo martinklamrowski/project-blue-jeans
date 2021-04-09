@@ -1,0 +1,6 @@
+msgpack
+colorama
+keyboard
+numpy
+scikit-learn
+opencv-python

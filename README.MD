@@ -17,7 +17,16 @@
 Note: Coppelia port set in scene is 8008.
 
 ### Package Dependencies
+Defined in requirements.txt.
+
 PS: Sorry.
+
+```bash
+$ python -m pip install -r requirements.txt
+```
+
+--or--
+
 ```bash
 $ pip install msgpack
 $ pip install colorama
@@ -28,11 +37,12 @@ $ pip install opencv-python
 ```
 
 ### Usage
-
 ```bash
 $ git clone https://github.com/SYSC4805-Winter-2021/project-blue-jeans
 ```
-
+```bash
+$ python -m pip install -r requirements.txt.txt
+```
 ```bash
 $ python main.py -p <port> -d <maze_length> <maze_width>
 ```
